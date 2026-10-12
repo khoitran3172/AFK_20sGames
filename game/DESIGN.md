@@ -99,3 +99,12 @@ Bảng "📊 Chỉ số giữ chân" trong tab *Khác* chỉ là bản cục b�
 * **Tiny Swords** — Pixel Frog (itch.io): công trình, dân làng, cừu, cây, đá vàng, icon. Dùng thương mại được, không được phát tán lại bộ asset.
 * **32rogues** — Seth Boyles (itch.io): anh hùng, vật phẩm. Dùng thương mại được (trừ dự án NFT/blockchain), **không dùng cho dự án AI sinh tạo/ML**, không phát tán lại. Xem `assets/rg/LICENSE.txt`.
 * Bản gốc tải về nằm ở `assets_itch/` (ngoài thư mục `game/`). Khi xuất bản, chỉ phát hành các file cần dùng trong `game/assets/` và ghi công tác giả.
+
+## 8. Đấu Thẻ (card battle) — gacha có chỗ dùng
+
+* **Thẻ:** anh hùng nhận từ gacha = *quân* (công/máu/cost theo độ hiếm × sao × cấp, kỹ năng theo nghề); trang bị nhận từ rương = *bùa phép* (sát thương / +máu / hồi căn cứ + rút bài / +công).
+* **Luật:** căn cứ 30 máu, 4 lane, mana +1/lượt (tối đa 8), rút 1 lá/lượt, bộ bài tối đa 12. Hết lượt, quân tự đánh lane đối diện (trống → đánh căn cứ), hai bên cùng chịu sát thương. Có Auto-battle (AI chơi giúp), tốc độ x1/x2/x4 và "Tự đánh" cho màn đã qua.
+* **Chiến dịch:** 30 màn / 3 chương, boss mỗi 5 màn. Tốn **Lệnh Bài** (10, hồi 1 mỗi 8 phút kể cả offline) → thêm một lý do quay lại.
+* **Thưởng:** vàng, thưởng lần đầu (ngọc, vé chiêu mộ), 40–80% rơi *mảnh thẻ* của anh hùng trong bộ bài (lên sao). Nhiệm vụ ngày, Hành trình, thành tựu có mục tiêu Đấu Thẻ.
+* **Cân bằng (mô phỏng `tools/sim.js`, thắng ≥50%):** người chơi 4 phiên/ngày qua ~màn 8 (ngày 1), ~14–16 (ngày 3), ~17–19 (ngày 7–14). Màn 20–30 cần lên sao/cấp lâu dài. AI địch & AI của người chơi trong sim là một; người thật chơi tay sẽ tốt hơn AI.
+* **Chưa làm:** PvP thật, hiệu ứng kỹ năng riêng cho từng thẻ, thẻ phép ngoài trang bị, combo theo nghề, âm thanh.

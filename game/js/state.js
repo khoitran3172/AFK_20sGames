@@ -31,6 +31,7 @@ function fresh() {
     prestige: { count: 0, run: 0, totalRenownEarned: 0 },
     tut: { step: 0, done: false, tenUsed: false },
     events: [], sessions: [], settings: { notify: false },
+    battle: { energy: 10, eAt: t, cleared: 0, deck: [], wins: 0, losses: 0 },
     seenGolden: '', nextHint: '',
   };
 }

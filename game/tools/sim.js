@@ -2,7 +2,7 @@
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const ctx = { console, Math, Date, JSON, localStorage: { getItem: () => null, setItem() {}, removeItem() {} }, document: { hidden: false }, window: {}, navigator: {}, setTimeout, toast() {}, location: {} };
 vm.createContext(ctx);
-for (const f of ['data', 'state', 'game']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../js', f + '.js'), 'utf8'), ctx, { filename: f });
+for (const f of ['data', 'state', 'game', 'battle']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../js', f + '.js'), 'utf8'), ctx, { filename: f });
 const run = c => vm.runInContext(c, ctx);
 const sessionsPerDay = +process.argv[2] || 4;
 run(`
@@ -35,7 +35,9 @@ function playSession() {
   if (canPrestige() && S.prestige.run > 4*50000*Math.pow(S.prestige.count+1,2)) doPrestige();
 }
 const marks = [];
-function snapshot(label){ const owned=Object.keys(S.own).map(i=>HEROES[i]); marks.push(label+' | vàng/s='+goldRate().toFixed(0)+' | tổng Lv='+BKEYS.reduce((a,k)=>a+S.lv[k],0)+' | hero '+owned.length+' (SSR '+owned.filter(h=>h.r==='SSR').length+') | lượt quay '+S.stats.pulls+' | ngọc '+S.gems+' | guild '+S.guildLv+' | renown '+S.renown+' | prestige '+S.prestige.count+' | rank '+S.rank); }
+function wrAt(n,k){ let w=0; const deck=autoDeck().map(cardByKey); for(let i=0;i<k;i++) if(simulateBattle(deck,stageDef(n))==='win') w++; return w/k; }
+function battleReach(){ let best=0; for(let n=1;n<=STAGE_N;n++){ if(wrAt(n,40)>=0.5) best=n; else if(n>best+2) break; } return best; }
+function snapshot(label){ const owned=Object.keys(S.own).map(i=>HEROES[i]); marks.push(label+' | vàng/s='+goldRate().toFixed(0)+' | tổng Lv='+BKEYS.reduce((a,k)=>a+S.lv[k],0)+' | hero '+owned.length+' (SSR '+owned.filter(h=>h.r==='SSR').length+') | lượt quay '+S.stats.pulls+' | ngọc '+S.gems+' | guild '+S.guildLv+' | renown '+S.renown+' | prestige '+S.prestige.count+' | rank '+S.rank+' | ĐẤU THẺ qua màn ~'+battleReach()+' (thẻ '+ownedCards().length+')'); }
 `);
 const days = +process.argv[3] || 14;
 const sched = { 1: [8, 20], 2: [8, 13, 20], 3: [8, 12, 17, 21], 4: [8, 12, 17, 21, 23], 6: [7, 9, 12, 15, 18, 21] }[sessionsPerDay] || [8, 12, 17, 21];

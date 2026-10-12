@@ -250,6 +250,7 @@ function nextHint() {
   if (S.lv.farm < 3) return { t: 'Nâng cấp Trang Trại để tăng thu nhập!', tab: 'village' };
   if (!S.tut.tenUsed) return { t: 'Quà tân thủ: bấm Chiêu Mộ ×10 (miễn phí, chắc chắn có SSR)!', tab: 'gacha' };
   if (!Object.keys(S.assign).length && Object.keys(S.own).length) return { t: 'Phân công anh hùng vào công trình để nhận buff!', tab: 'team' };
+  if (S.battle.wins < 1 && Object.keys(S.own).length >= 3) return { t: 'Thử Đấu Thẻ: dùng thẻ anh hùng vừa chiêu mộ để đánh màn 1!', tab: 'battle' };
   if (S.stats.cars < 1) return { t: 'Gửi thương đoàn đầu tiên (Thương mại)!', tab: 'trade' };
   const g = S.week.pending; if (g) return { t: 'Nhận thưởng Bảng Xếp Hạng tuần trước!', tab: 'rival' };
   const open = JOURNEY.filter(j => j.day <= d).flatMap(j => j.goals).filter(x => !S.jclaimed[x.id]);
@@ -267,6 +268,7 @@ function badges() {
   b.gacha = S.tickets > 0 || S.gems >= COST.pull || S.ssrPick > 0;
   b.trade = S.caravans.some(c => c.end <= nowMs());
   b.rival = !!S.week.pending;
+  b.battle = S.battle.energy >= 5 && S.battle.cleared < STAGE_N;
   b.team = false;
   return b;
 }
@@ -282,6 +284,7 @@ function gameTick() {
   const t = nowMs(); let dt = (t - lastTick) / 1000; lastTick = t; if (dt <= 0) return;
   if (dt > 90) { const before = { gold: S.gold, gems: S.gems }; const cd = S.caravans.filter(c => c.end <= t).length; dt = Math.min(dt, offlineCap()); simulate(dt); welcome = { dt, gold: S.gold - before.gold, gems: S.gems - before.gems, carDone: cd, goods: [] }; }
   else simulate(dt);
+  energyTick();
   marketAcc += dt; saveAcc += dt; hookAcc += dt;
   if (marketAcc >= 5) { marketAcc = 0; marketStep(); }
   if (ensureDay()) { welcomeDay = true; }

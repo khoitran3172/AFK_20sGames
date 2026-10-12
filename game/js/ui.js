@@ -7,7 +7,7 @@ const DEV = /[?&]dev=1/.test(location.search);
 function toast(t) { const d = document.createElement('div'); d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 3300); }
 
 /* ---------- icon helpers ---------- */
-const SHEETS = { items: [352, 832], rogues: [224, 224] };
+const SHEETS = { items: [352, 832], rogues: [224, 224], monsters: [384, 416] };
 function ico(spec, size = 24) {
   if (spec.img) return `<img src="${spec.img}" width="${size}" height="${size}" style="object-fit:contain;flex:none">`;
   const k = size / 32, [sw, sh] = SHEETS[spec.sheet]; return `<span class="ico px" style="width:${size}px;height:${size}px;background:url(assets/rg/${spec.sheet}.png) -${spec.c * 32 * k}px -${spec.r * 32 * k}px/${sw * k}px ${sh * k}px"></span>`;
@@ -26,7 +26,7 @@ const tag = r => `<span class="tag ${r}">${r}</span>`;
 /* ---------- Tab ---------- */
 const TABS = [
   ['village', 'Công trình', { img: TS('House2') }, 'Công trình & Kho'], ['trade', 'Thương mại', { sheet: 'items', c: 2, r: 24 }, 'Thương mại'],
-  ['gacha', 'Chiêu mộ', { sheet: 'items', c: 0, r: 21 }, 'Chiêu mộ'], ['team', 'Nhân sự', { sheet: 'rogues', c: 0, r: 1 }, 'Nhân sự'],
+  ['gacha', 'Chiêu mộ', { sheet: 'items', c: 0, r: 21 }, 'Chiêu mộ thẻ'], ['battle', 'Đấu Thẻ', { sheet: 'items', c: 2, r: 0 }, 'Đấu Thẻ — Chiến dịch'], ['team', 'Nhân sự', { sheet: 'rogues', c: 0, r: 1 }, 'Nhân sự'],
   ['gear', 'Trang bị', { sheet: 'items', c: 5, r: 12 }, 'Trang bị'], ['journey', 'Hành trình', { sheet: 'items', c: 6, r: 21 }, 'Hành Trình 7 Ngày'],
   ['quest', 'Nhiệm vụ', { sheet: 'items', c: 1, r: 21 }, 'Nhiệm vụ & Điểm danh'], ['pass', 'Sổ Hội', { sheet: 'items', c: 0, r: 22 }, 'Sổ Thương Hội'],
   ['rival', 'Xếp hạng', { sheet: 'items', c: 5, r: 17 }, 'Bảng Xếp Hạng'], ['more', 'Khác', { img: TS('Icon_10') }, 'Cài đặt'],
@@ -128,7 +128,7 @@ function pTeam() {
   const slots = ['farm', 'lumber', 'mine', 'garden', 'trade'].filter(s => s === 'trade' || S.lv[s] > 0 || dayUnlocked(BUILD[s].unlockDay)).map(slotBox).join('');
   const list = HEROES.slice().sort((a, b) => (!!S.own[b.id] - !!S.own[a.id]) || RN.indexOf(b.r) - RN.indexOf(a.r) || a.id - b.id).map(h => {
     const o = S.own[h.id];
-    return `<div class="ch ${o ? '' : 'locked'}" title="${h.story}">${heroImg(h, 48)}<div>${tag(h.r)} <b>${h.n}</b></div><div class="stars">${o ? '★'.repeat(o.star) + '☆'.repeat(6 - o.star) : '???'}</div><div class="mut">${JOBN[h.job]} · +${RB[h.r]}%${o ? `<br>Lv ${o.lv}/${heroLvCap(o)} · mảnh ${o.shard}/${o.star}` : ''}</div>${o && o.lv < heroLvCap(o) ? `<button class="sm" data-a="hlv:${h.id}" ${S.gold < heroLvCost(h, o) ? 'disabled' : ''}>Lên cấp ${fmt(heroLvCost(h, o))}</button>` : ''}</div>`;
+    return `<div class="ch ${o ? '' : 'locked'}" title="${h.story}">${heroImg(h, 48)}<div>${tag(h.r)} <b>${h.n}</b></div><div class="stars">${o ? '★'.repeat(o.star) + '☆'.repeat(6 - o.star) : '???'}</div><div class="mut">${JOBN[h.job]} · +${RB[h.r]}%${o ? `<br>⚔ ${heroCard(h).atk} ❤ ${heroCard(h).hp}` : ''}${o ? `<br>Lv ${o.lv}/${heroLvCap(o)} · mảnh ${o.shard}/${o.star}` : ''}</div>${o && o.lv < heroLvCap(o) ? `<button class="sm" data-a="hlv:${h.id}" ${S.gold < heroLvCost(h, o) ? 'disabled' : ''}>Lên cấp ${fmt(heroLvCost(h, o))}</button>` : ''}</div>`;
   }).join('');
   return `<div class="card"><h3>Phân công (khớp nghề = buff x2)</h3>${slots}</div><div class="card"><h3>Bộ sưu tập ${Object.keys(S.own).length}/${HEROES.length}</h3><div class="chars">${list}</div></div>`;
 }
@@ -185,7 +185,7 @@ function pMore() {
    <div class="row" style="margin-top:8px"><button class="blue" data-a="export">Xuất save</button><button class="blue" data-a="import">Nhập save</button><button class="red" data-a="reset">Xoá save</button></div></div>
   <div class="card"><h3>📊 Chỉ số giữ chân (thiết bị này)</h3><div class="mut">Ngày cài: ${new Date(S.first).toLocaleDateString()} · Ngày thứ ${accDay() + 1} · Tổng ngày đăng nhập: ${S.loginDays}<br>Quay lại D1: <b>${r.d1 ? 'CÓ' : 'chưa'}</b> · D7: <b>${r.d7 ? 'CÓ' : 'chưa'}</b> · Phiên: ${r.sessions}<br>Đặt <code>window.ANALYTICS_URL</code> để gửi sự kiện về server; RR1/RR7 thật phải tính theo cohort phía server (xem DESIGN.md).</div></div>${dev}`;
 }
-const PANELS = { village: pVillage, trade: pTrade, gacha: pGacha, team: pTeam, gear: pGear, journey: pJourney, quest: pQuest, pass: pPass, rival: pRival, more: pMore };
+const PANELS = { battle: pBattle, village: pVillage, trade: pTrade, gacha: pGacha, team: pTeam, gear: pGear, journey: pJourney, quest: pQuest, pass: pPass, rival: pRival, more: pMore };
 
 /* ---------- Render ---------- */
 let lastMain = '', lastRes = '', lastNav = '', lastG = '', lastHint = '', lastGuild = '';
@@ -241,6 +241,11 @@ function act(a) {
     case 'login': case 'loginclaim': claimLogin(); if (n === 'loginclaim') closeModal(); break;
     case 'prestige': if (confirm('Mở chi nhánh mới? Vàng và công trình sản xuất sẽ được đặt lại (giữ anh hùng, trang bị, ngọc).')) doPrestige(); break;
     case 'close': closeModal(); return;
+    case 'bfight': if (openArena(+x)) { tab = null; lastMain = ''; } break;
+    case 'barena_again': closeModal(); closeArena(); openArena(+x); return;
+    case 'barena_close': closeModal(); closeArena(); return;
+    case 'bsweep': { const r = sweepStage(+x); if (r) openModal(`<h2 style="color:${r.res === 'win' ? 'var(--gold)' : '#e0594f'}">${r.res === 'win' ? '🏆 Tự đánh: Thắng' : '💀 Tự đánh: Thua'}</h2><p>${r.st.name}</p>${r.r ? `<div class="card" style="display:inline-block">${fmt(r.r.gold)} 🪙${r.r.shard != null ? ' · Mảnh ' + HEROES[r.r.shard].n : ''}</div>` : '<p class="mut">Hãy mạnh hơn rồi thử lại.</p>'}<p><button class="gold" data-a="close">OK</button></p>`); break; }
+    case 'bautodeck': S.battle.deck = autoDeck(); break;
     case 'notify': if (!S.settings.notify) { if (window.Notification) Notification.requestPermission().then(p => { S.settings.notify = p === 'granted'; render(); }); } else S.settings.notify = false; break;
     case 'export': prompt('Sao chép chuỗi save:', btoa(unescape(encodeURIComponent(JSON.stringify(S))))); return;
     case 'import': { const s = prompt('Dán chuỗi save:'); if (s) { try { S = migrate(JSON.parse(decodeURIComponent(escape(atob(s))))); save(); location.reload(); } catch (e) { toast('Save không hợp lệ'); } } return; }

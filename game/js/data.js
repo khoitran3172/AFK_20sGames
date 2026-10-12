@@ -109,12 +109,13 @@ const GOLDEN_PRICE = 1.5;
 
 /* ---------- Nhiệm vụ ngày ---------- */
 const DAILY = [
-  {id:'login', n:'Điểm danh',                    goal:()=>1,                get:s=>1,                 ap:20, gems:15},
+  {id:'login', n:'Điểm danh',                    goal:()=>1,                get:s=>1,                 ap:15, gems:15},
   {id:'gold',  n:'Kiếm vàng',                    goal:s=>Math.floor(1500*Math.pow(1.35,s.guildLv-1)), get:s=>s.daily.stat.gold,   ap:20, gems:20},
-  {id:'ups',   n:'Nâng cấp công trình',          goal:s=>5+Math.floor(s.guildLv/3),               get:s=>s.daily.stat.ups,    ap:20, gems:20},
+  {id:'ups',   n:'Nâng cấp công trình',          goal:s=>5+Math.floor(s.guildLv/3),               get:s=>s.daily.stat.ups,    ap:15, gems:20},
   {id:'cars',  n:'Gửi thương đoàn',              goal:()=>2,                get:s=>s.daily.stat.cars, ap:15, gems:20},
   {id:'pulls', n:'Chiêu mộ hoặc mở hòm',         goal:()=>3,                get:s=>s.daily.stat.pulls,ap:15, gems:25},
-  {id:'sell',  n:'Giao hàng thủ công',           goal:()=>2,                get:s=>s.daily.stat.sell, ap:10, gems:15},
+  {id:'sell',  n:'Giao hàng thủ công',           goal:()=>2,                get:s=>s.daily.stat.sell, ap:5, gems:15},
+  {id:'wins',  n:'Thắng Đấu Thẻ',                goal:()=>2,                get:s=>s.daily.stat.wins||0, ap:15, gems:20},
 ];
 const AP_CHESTS = [
   {ap:20, r:{gems:40}},{ap:40,r:{gems:40,gold:'x'}},{ap:60,r:{tickets:1}},{ap:80,r:{gems:60}},{ap:100,r:{tickets:1,gems:60}},
@@ -133,6 +134,7 @@ const JOURNEY = [
     {id:'j0b',n:'Nâng Xưởng Gỗ lên Lv 3',        chk:s=>s.lv.lumber>=3,         rew:{gems:100}},
     {id:'j0c',n:'Chiêu mộ 10 lần (tân thủ)',      chk:s=>s.stats.pulls>=10,      rew:{gems:210}},
     {id:'j0d',n:'Giao 1 thương đoàn về',          chk:s=>s.stats.cars>=1,        rew:{gems:100,tickets:1}},
+    {id:'j0f',n:'Thắng 1 trận Đấu Thẻ',           chk:s=>s.battle.cleared>=1,   rew:{gems:100,tickets:1}},
     {id:'j0e',n:'Phân công 1 anh hùng',           chk:s=>Object.keys(s.assign).length>=1, rew:{gems:140}},
   ]},
   {day:1, title:'Ngày 2 — Mở rộng', teaser:'Ngày mai: Tu Viện Dược, Rương trang bị, Sổ Thương Hội!', goals:[
@@ -145,6 +147,7 @@ const JOURNEY = [
     {id:'j2a',n:'Xây Tu Viện Dược',               chk:s=>s.lv.garden>=1,         rew:{gems:180}},
     {id:'j2b',n:'Sở hữu 1 trang bị',              chk:s=>Object.keys(s.gear).length>=1,  rew:{gems:140,tickets:1}},
     {id:'j2c',n:'Đạt Cấp Thương Hội 6',           chk:s=>s.guildLv>=6,           rew:{gems:210}},
+    {id:'j2e',n:'Qua màn 5 Đấu Thẻ (Boss)',       chk:s=>s.battle.cleared>=5,   rew:{gems:150,tickets:1}},
     {id:'j2d',n:'Có anh hùng SR trở lên',         chk:s=>Object.keys(s.own).some(i=>RN.indexOf(HEROES[i].r)>=2), rew:{gems:210,tickets:2}},
   ]},
   {day:3, title:'Ngày 4 — Chi nhánh', teaser:'Ngày mai: Thương đoàn tuyến Hành Trình Đêm 8h x5.5 lãi!', goals:[
@@ -155,6 +158,7 @@ const JOURNEY = [
   {day:4, title:'Ngày 5 — Đua top', teaser:'Ngày mai: chốt tuần — nhận thưởng Bảng Xếp Hạng!', goals:[
     {id:'j4a',n:'Vào Top 10 Bảng Xếp Hạng tuần',  chk:s=>s.rank>0&&s.rank<=10,   rew:{gems:280,tickets:2}},
     {id:'j4b',n:'Có 3 anh hùng SR+ trở lên',      chk:s=>Object.keys(s.own).filter(i=>RN.indexOf(HEROES[i].r)>=2).length>=3, rew:{gems:280}},
+    {id:'j4d',n:'Qua màn 10 Đấu Thẻ',             chk:s=>s.battle.cleared>=10,  rew:{gems:200,tickets:1}},
     {id:'j4c',n:'Nâng 1 anh hùng lên Lv 10',      chk:s=>Object.values(s.own).some(o=>o.lv>=10), rew:{gems:210}},
   ]},
   {day:5, title:'Ngày 6 — Hoàn thiện', teaser:'Ngày mai: Vé SSR TỰ CHỌN ở quà đăng nhập ngày 7!', goals:[
@@ -165,6 +169,7 @@ const JOURNEY = [
   {day:6, title:'Ngày 7 — Huyền thoại', teaser:'Tuần mới: sự kiện & thương hội đối thủ mới!', goals:[
     {id:'j6a',n:'Sở hữu 1 anh hùng SSR',          chk:s=>Object.keys(s.own).some(i=>HEROES[i].r==='SSR'), rew:{gems:560,ssrPick:1}},
     {id:'j6b',n:'Cấp Thương Hội 10',              chk:s=>s.guildLv>=10,          rew:{gems:420,tickets:3}},
+    {id:'j6d',n:'Qua màn 15 Đấu Thẻ',             chk:s=>s.battle.cleared>=15,  rew:{gems:300,tickets:2}},
     {id:'j6c',n:'Đăng nhập đủ 7 ngày',            chk:s=>s.loginDays>=7,         rew:{gems:490,tickets:3}},
   ]},
 ];
@@ -177,6 +182,7 @@ const ACH = [
   {id:'a_cars',  n:'Đoàn trưởng',    get:s=>s.stats.cars,   tiers:[5,25,100,300,1000],                gem:[25,50,100,200,400]},
   {id:'a_hero',  n:'Sưu tầm',        get:s=>Object.keys(s.own).length, tiers:[5,10,15,20,25,30],      gem:[40,60,100,150,250,500]},
   {id:'a_pres',  n:'Đa chi nhánh',   get:s=>s.prestige.count,tiers:[1,3,5,10,25],                     gem:[100,150,250,400,750]},
+  {id:'a_win',  n:'Đấu sĩ',         get:s=>s.battle.wins,  tiers:[1,10,50,150,500],                gem:[30,50,100,200,400]},
   {id:'a_login', n:'Gắn bó',         get:s=>s.loginDays,    tiers:[3,7,14,30,60,100],                 gem:[50,150,250,500,1000,1500]},
 ];
 
