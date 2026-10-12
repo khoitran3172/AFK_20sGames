@@ -127,7 +127,7 @@ svg.spark{width:100%;height:32px;background:#120e0a;border-radius:4px}
 .tabs2 button.on{background:#d99a1c;color:#2a1b00}
 
 /* ================= ĐẤU THẺ ================= */
-.dk{width:72px}
+.dk{width:66px}
 #arena{position:absolute;inset:0;z-index:15;display:none;background:radial-gradient(ellipse at 50% 40%,#2b3a1a,#10150a 75%);color:var(--txt)}
 #arena.show{display:block}
 #arena::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,#ffffff06 0 2px,transparent 2px 300px)}

@@ -251,6 +251,7 @@ function nextHint() {
   if (!S.tut.tenUsed) return { t: 'Quà tân thủ: bấm Chiêu Mộ ×10 (miễn phí, chắc chắn có SSR)!', tab: 'gacha' };
   if (!Object.keys(S.assign).length && Object.keys(S.own).length) return { t: 'Phân công anh hùng vào công trình để nhận buff!', tab: 'team' };
   if (S.battle.wins < 1 && Object.keys(S.own).length >= 3) return { t: 'Thử Đấu Thẻ: dùng thẻ anh hùng vừa chiêu mộ để đánh màn 1!', tab: 'battle' };
+  if (S.battle.wins >= 1 && S.afk.claims < 1 && afkAccrued().h >= 0.5) return { t: 'Nhận thưởng Treo Máy — làng và chiến dịch làm việc cho bạn!', tab: 'afk' };
   if (S.stats.cars < 1) return { t: 'Gửi thương đoàn đầu tiên (Thương mại)!', tab: 'trade' };
   const g = S.week.pending; if (g) return { t: 'Nhận thưởng Bảng Xếp Hạng tuần trước!', tab: 'rival' };
   const open = JOURNEY.filter(j => j.day <= d).flatMap(j => j.goals).filter(x => !S.jclaimed[x.id]);
@@ -269,6 +270,7 @@ function badges() {
   b.trade = S.caravans.some(c => c.end <= nowMs());
   b.rival = !!S.week.pending;
   b.battle = S.battle.energy >= 5 && S.battle.cleared < STAGE_N;
+  b.afk = afkAccrued().h >= 2 || S.orders.list.some(orderOk) || S.exp.missions.some(m => m.end && nowMs() >= m.end);
   b.team = false;
   return b;
 }
@@ -284,7 +286,7 @@ function gameTick() {
   const t = nowMs(); let dt = (t - lastTick) / 1000; lastTick = t; if (dt <= 0) return;
   if (dt > 90) { const before = { gold: S.gold, gems: S.gems }; const cd = S.caravans.filter(c => c.end <= t).length; dt = Math.min(dt, offlineCap()); simulate(dt); welcome = { dt, gold: S.gold - before.gold, gems: S.gems - before.gems, carDone: cd, goods: [] }; }
   else simulate(dt);
-  energyTick();
+  energyTick(); ordersTick(); expTick(); towerTick();
   marketAcc += dt; saveAcc += dt; hookAcc += dt;
   if (marketAcc >= 5) { marketAcc = 0; marketStep(); }
   if (ensureDay()) { welcomeDay = true; }
@@ -293,6 +295,7 @@ function gameTick() {
     hookAcc = 0;
     for (const c of S.caravans) if (c.end <= t && !c.notified) { c.notified = 1; notify('Thương đoàn đã về!', 'Vào thu hoạch lợi nhuận.'); }
     const cap = capacity(); if (GOODS.every(g => S[g] >= cap * 0.98) && !S._fullNotified) { S._fullNotified = 1; notify('Nhà kho đã đầy', 'Sản xuất đang dừng — vào bán hàng!'); } else if (!GOODS.every(g => S[g] >= cap * 0.98)) S._fullNotified = 0;
+    for (const m of S.exp.missions) if (m.end && m.end <= t && !m.notified) { m.notified = 1; notify('Thám hiểm xong!', m.n + ' — vào nhận thưởng.'); }
     const gi = goldenInfo(); const gk = dayKey(t) + ':' + gi.id; if (gi.active && S.seenGolden !== gk) { S.seenGolden = gk; notify('Giờ Vàng bắt đầu!', 'Bán hàng giá x1.5, ngọc x2.'); }
   }
   if (saveAcc >= 10) { saveAcc = 0; save(); }

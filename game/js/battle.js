@@ -16,6 +16,20 @@ const SKILL = {
   garden: { n: 'Hồi Phục',      d: m => `Hồi ${Math.round(35 + 10 * m)}% máu cho đồng minh yếu nhất` },
   trade:  { n: 'Nhanh Tay',     d: m => `Cả đội đánh nhanh hơn ${Math.round(25 + 5 * m)}% trong 6s` },
 };
+/* ---------- Hệ phái (nghề) khắc chế theo vòng: Mộc > Nông > Khoáng > Dược > Thương > Mộc ---------- */
+const JOBS = ['lumber', 'farm', 'mine', 'garden', 'trade'];
+const JOB_ICON = { lumber: '🪓', farm: '🌾', mine: '⛏', garden: '🌿', trade: '⚖' };
+const JOB_NAME = { lumber: 'Mộc', farm: 'Nông', mine: 'Khoáng', garden: 'Dược', trade: 'Thương' };
+const JOB_BEATS = { lumber: 'farm', farm: 'mine', mine: 'garden', garden: 'trade', trade: 'lumber' };
+const jobMult = (a, b) => JOB_BEATS[a] === b ? 1.3 : JOB_BEATS[b] === a ? 0.8 : 1;
+function resonance(ids) {            // cộng hưởng đội hình
+  const c = {}; ids.forEach(id => c[HEROES[id].job] = (c[HEROES[id].job] || 0) + 1);
+  const best = Math.max(0, ...Object.values(c)), kinds = Object.keys(c).length;
+  let atk = 0, hp = 0, txt = [];
+  if (best >= 5) { atk += 0.25; hp += 0.10; txt.push('Đồng hệ ×5: +25% công +10% máu'); } else if (best >= 4) { atk += 0.18; hp += 0.10; txt.push('Đồng hệ ×4: +18% công +10% máu'); } else if (best >= 3) { atk += 0.10; txt.push('Đồng hệ ×3: +10% công'); }
+  if (kinds >= 5) { atk += 0.08; hp += 0.08; txt.push('Đủ 5 hệ: +8% công & máu'); }
+  return { atk, hp, txt };
+}
 const SPELL_TXT = {   // mô tả hiệu ứng trang bị trong chiến đấu (khi nhận từ rương)
   weapon: v => `+${v}% công toàn đội`, armor: v => `+${v}% máu toàn đội`, charm: v => `+${v}% tốc độ nạp năng lượng`, potion: v => `+${v}% sức mạnh kỹ năng`,
 };
@@ -43,7 +57,11 @@ const STAGE_N = 30;
 const ENEMY_BASE = { atk: 15, hp: 130 };            // chỉ số quái thường ở "sức mạnh 100%"
 function stageDef(n) {
   const boss = n % 5 === 0, ch = Math.floor((n - 1) / 10);
-  return { n, boss, chapter: ch, f: 1.0 + 0.4 * (n - 1), name: boss ? BOSS[n / 5 - 1][2] : `Màn ${n}`, tier: Math.min(3, Math.floor((n - 1) / 8)), limit: boss ? 150 : 110 };
+  return { n, boss, chapter: ch, f: 1.0 + 0.4 * (n - 1), name: boss ? BOSS[n / 5 - 1][2] : `Màn ${n}`, tier: Math.min(3, Math.floor((n - 1) / 8)), limit: boss ? 150 : 110, dom: JOBS[n % 5] };
+}
+function towerDef(f) {                 // Tháp Thử Thách: vô hạn tầng, boss mỗi 10 tầng
+  const boss = f % 10 === 0;
+  return { n: f, tower: true, boss, chapter: Math.min(2, Math.floor((f - 1) / 20)), f: 1.5 + 0.55 * (f - 1), name: boss ? BOSS[(f / 10 - 1) % BOSS.length][2] : `Tầng ${f}`, tier: Math.min(3, Math.floor((f - 1) / 8)), limit: boss ? 160 : 120, dom: JOBS[(f + 2) % 5], bossIdx: boss ? (f / 10 - 1) % BOSS.length : -1 };
 }
 
 /* ---------- Trận đấu ---------- */
@@ -53,32 +71,32 @@ const SLOT = [[470, 450], [440, 560], [330, 405], [300, 515], [190, 460]];     /
 const rnd = (a, b) => a + Math.random() * (b - a);
 function mkUnit(side, d) { return { id: ++uid, side, flash: 0, atkT: 0, cd: rnd(0.2, 0.9), stun: 0, energy: d.energy || 0, alive: true, buffs: {}, dir: side === 'p' ? 1 : -1, ...d }; }
 function newBT(heroIds, st) {
-  const gb = generalBonus(S.guildLv), gA = (1 + gearBonus('weapon')) * (1 + gb.atk), gH = (1 + gearBonus('armor')) * (1 + gb.hp);
+  const gb = generalBonus(S.guildLv), rs = resonance(heroIds), gA = (1 + gearBonus('weapon')) * (1 + gb.atk) * (1 + rs.atk), gH = (1 + gearBonus('armor')) * (1 + gb.hp) * (1 + rs.hp);
   const units = heroIds.map((id, i) => {
     const h = HEROES[id], s = heroStat(h), m = BR[h.r].m;
     return mkUnit('p', { name: h.n, hid: id, r: h.r, job: h.job, m, spr: { sheet: h.sh || 'rogues', c: h.c, r: h.rw }, atk: s.atk * gA, hp: s.hp * gH, max: s.hp * gH, as: 1.25, range: RANGED_JOB[h.job] ? 340 : 85, speed: 150, x: SLOT[i][0] - 90, y: SLOT[i][1], hx: SLOT[i][0], hy: SLOT[i][1], scale: 4, slot: i, energy: 25 + Math.random() * 20 });
   });
-  BT = { st, t: 0, wave: 0, waveDelay: 0.6, units, dead: [], ev: [], over: null, paused: false, auto: false, ult: 0, kills: 0, gen: { x: 110, y: 520, cast: 0 }, gb };
+  BT = { st, t: 0, wave: 0, waveDelay: 0.6, units, dead: [], ev: [], over: null, paused: false, auto: false, ult: 0, kills: 0, gen: { x: 110, y: 520, cast: 0 }, gb, rs };
   return BT;
 }
 function spawnWave(bt) {
   bt.wave++; const st = bt.st, wf = [1, 1.12, 1.28][bt.wave - 1], pool = MON[st.tier];
   const n = [3, 4, 5][bt.wave - 1]; const list = [];
   for (let i = 0; i < n; i++) { const p = pool[Math.floor(Math.random() * pool.length)]; list.push({ p, boss: false }); }
-  if (st.boss && bt.wave === WAVES) { list.length = 3; list.unshift({ p: BOSS[st.n / 5 - 1], boss: true }); }
+  if (st.boss && bt.wave === WAVES) { list.length = 3; list.unshift({ p: BOSS[st.tower ? st.bossIdx : st.n / 5 - 1], boss: true }); }
   list.forEach((e, i) => {
     const k = st.f * wf, strong = !e.boss && /Orc Kiếm|Troll|Ettin|Golem|Minotaur|Hiệp Sĩ/.test(e.p[2]);
     const atk = ENEMY_BASE.atk * k * (e.boss ? 1.6 : strong ? 1.25 : 1), hp = ENEMY_BASE.hp * k * (e.boss ? 7 : strong ? 1.5 : 1);
-    bt.units.push(mkUnit('e', { name: e.p[2], r: e.boss ? 'SSR' : 'N', job: 'mon', boss: e.boss, spr: { sheet: 'monsters', c: e.p[0], r: e.p[1] }, atk, hp, max: hp, as: 1.5, range: e.p[3] ? 330 : 80, speed: e.boss ? 70 : 85, x: 1330 + i * 70, y: 420 + (i * 83) % 190, scale: e.boss ? 7 : 4, energy: 0 }));
+    bt.units.push(mkUnit('e', { name: e.p[2], r: e.boss ? 'SSR' : 'N', job: e.boss ? st.dom : (Math.random() < 0.6 ? st.dom : JOBS[Math.floor(Math.random() * 5)]), boss: e.boss, spr: { sheet: 'monsters', c: e.p[0], r: e.p[1] }, atk, hp, max: hp, as: 1.5, range: e.p[3] ? 330 : 80, speed: e.boss ? 70 : 85, x: 1330 + i * 70, y: 420 + (i * 83) % 190, scale: e.boss ? 7 : 4, energy: 0 }));
   });
   bt.ev.push({ t: 'wave', n: bt.wave, boss: st.boss && bt.wave === WAVES });
 }
 const alive = (bt, side) => bt.units.filter(u => u.alive && u.side === side);
 const buffMul = (u, k) => (u.buffs[k] && u.buffs[k].t > 0) ? u.buffs[k].v : 0;
 function dealDamage(bt, src, tgt, raw, tag) {
-  let d = raw; const red = tgt.side === 'p' ? Math.min(0.8, bt.units.filter(x => x.alive && x.side === 'p').reduce((a, x) => Math.max(a, buffMul(x, 'shield')), 0)) : 0;
+  let d = raw; if (src && src.job && tgt.job && tag !== 'ult') d *= jobMult(src.job, tgt.job); const red = tgt.side === 'p' ? Math.min(0.8, bt.units.filter(x => x.alive && x.side === 'p').reduce((a, x) => Math.max(a, buffMul(x, 'shield')), 0)) : 0;
   d *= (1 - red); tgt.hp -= d; tgt.flash = 0.12;
-  bt.ev.push({ t: 'hit', id: src ? src.id : 0, tid: tgt.id, dmg: Math.round(d), crit: tag === 'crit', x: tgt.x, y: tgt.y, side: tgt.side, tag });
+  bt.ev.push({ t: 'hit', id: src ? src.id : 0, tid: tgt.id, dmg: Math.round(d), crit: tag === 'crit', adv: src && src.job && tgt.job ? Math.sign(jobMult(src.job, tgt.job) - 1) : 0, x: tgt.x, y: tgt.y, side: tgt.side, tag });
   const gain = (1 + gearBonus('charm'));
   if (tgt.side === 'p') tgt.energy = Math.min(100, tgt.energy + 4 * gain);
   if (src && src.side === 'p') src.energy = Math.min(100, src.energy + 9 * gain);
@@ -179,6 +197,11 @@ function winRewards(st, first) {
 function applyRewards(r) { addGold(r.gold); S.gems += r.gems; S.tickets += r.tickets; if (r.shard != null) addShard(r.shard); }
 function finishBattle(result, st, swept) {
   const b = S.battle; let r = null;
+  if (st.tower) {
+    if (result === 'win') { const t = S.tower; t.floor = Math.max(t.floor, st.n); r = { gold: Math.floor(Math.max(500 * st.n, goldRate() * (90 + st.n * 12))), gems: st.boss ? 60 : 12, tickets: st.boss ? 1 : 0, dust: st.boss ? 20 : 6, shard: null }; addGold(r.gold); S.gems += r.gems; S.tickets += r.tickets; S.dust += r.dust; b.wins++; bump('wins'); addGuildXp(5); }
+    else b.losses++;
+    track('tower', { f: st.n, r: result }); return r;
+  }
   if (result === 'win') { const first = st.n > b.cleared; if (first) b.cleared = st.n; r = winRewards(st, first); applyRewards(r); b.wins++; bump('wins'); addGuildXp(4); }
   else b.losses++;
   track('battle', { n: st.n, r: result, swept: !!swept }); return r;
@@ -195,4 +218,10 @@ function sweepStage(n) {      // "Tự đánh": mô phỏng nhanh với Auto, ch
   const b = S.battle; energyTick(); if (n > b.cleared) return null; if (b.energy < 1) { toast('Hết Lệnh Bài'); return null; }
   const team = curTeam(); b.energy--; if (b.energy === ENERGY_MAX - 1) b.eAt = nowMs();
   const st = stageDef(n), res = simulateBattle(team, st); const r = finishBattle(res, st, true); return { res, r, st };
+}
+
+function startTower() {
+  const t = S.tower; if (t.tries < 1) { toast('Hết lượt Tháp hôm nay — mai quay lại!'); return null; }
+  const team = curTeam(); if (team.length < 1) { toast('Chưa có anh hùng — hãy Chiêu mộ!'); return null; }
+  t.tries--; S.battle.team = team; return newBT(team, towerDef(t.floor + 1));
 }

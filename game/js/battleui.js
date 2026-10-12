@@ -17,16 +17,16 @@ function fxs(name, x, y, o = {}) {
 function banner(txt, cls = 'p', ms = 1500) { const b = document.createElement('div'); b.className = 'turnban ' + cls; b.textContent = txt; arenaEl().appendChild(b); setTimeout(() => b.remove(), ms); }
 
 /* ---------- Khởi động / kết thúc ---------- */
-function openArena(n) {
-  const bt = startFight(n); if (!bt) return false;
-  V = { n, speed: S.battle.speed || 1, floats: [], shots: [], fxN: 0, last: performance.now(), over: false, paused: false, t: 0, shake: 0, white: 0, hudT: 0, gold: 0, raf: 0 };
+function openArena(n, tower) {
+  const bt = tower ? startTower() : startFight(n); if (!bt) return false;
+  V = { n, tower: !!tower, speed: S.battle.speed || 1, floats: [], shots: [], fxN: 0, last: performance.now(), over: false, paused: false, t: 0, shake: 0, white: 0, hudT: 0, gold: 0, raf: 0 };
   bt.auto = !!S.battle.auto;
   const a = arenaEl(); a.classList.add('show'); document.body.classList.add('inbattle');
   a.innerHTML = `<canvas id="bcv" width="1280" height="720"></canvas>
     <div id="bhud"><button class="bpause" data-b="pause">❚❚</button>
       <div class="bpill"><span class="hg">⏳</span><b id="btime">00:00</b></div><div class="bpill wave"><b id="bwave">1/3</b></div>
       <div class="bctl"><button class="sm" data-b="auto" id="bauto">AUTO</button><button class="sm" data-b="speed" id="bspeed">x1</button></div>
-      <div class="bpill r"><span class="ico-c"></span><b id="bgold">0</b></div><div class="bpill r"><span>${CHAPTERS[bt.st.chapter].split('·')[0]}</span><b>${bt.st.boss ? '👑 ' : ''}${bt.st.name}</b></div>
+      <div class="bpill r"><span class="ico-c"></span><b id="bgold">0</b></div><div class="bpill r"><span>${bt.st.tower ? 'Tháp Thử Thách' : CHAPTERS[bt.st.chapter].split('·')[0]}</span><b>${bt.st.boss ? '👑 ' : ''}${bt.st.name} ${JOB_ICON[bt.st.dom]}</b></div>
       <div class="bteam" id="bteam"></div><button class="bult" data-b="ult" id="bult"><i></i><em class="gp" style="background-image:url(${curGeneral().idle.src})"></em><span>HIỆU LỆNH</span></button></div>`;
   V.cv = document.getElementById('bcv'); V.cx = V.cv.getContext('2d'); V.cx.imageSmoothingEnabled = false;
   updateCtl(); V.raf = requestAnimationFrame(arenaLoop); return true;
@@ -52,7 +52,7 @@ function handleEvents() {
   for (const e of evs) {
     if (e.t === 'hit') {
       const big = e.crit || e.tag === 'skill' || e.tag === 'ult';
-      V.floats.push({ x: e.x + (Math.random() * 30 - 15), y: e.y - 90, t: 0, txt: (e.side === 'e' ? '' : '-') + e.dmg, col: e.side === 'e' ? (big ? '#ffd54a' : '#fff') : '#ff6a5a', big });
+      V.floats.push({ x: e.x + (Math.random() * 30 - 15), y: e.y - 90, t: 0, txt: (e.side === 'e' ? '' : '-') + e.dmg + (e.adv > 0 ? '▲' : e.adv < 0 ? '▼' : ''), col: e.side === 'e' ? (big ? '#ffd54a' : '#fff') : '#ff6a5a', big });
       if (e.tag === 'ult') fxs('hit_y', e.x, e.y - 50, { s: 2.6 });
       else fxs(big ? 'slash' : 'hit_y', e.x, e.y - 55, { s: big ? 2.6 : 1.8, rot: e.side === 'e' ? 0 : 180 });
     } else if (e.t === 'shot') V.shots.push({ x: e.x, y: e.y, tx: e.tx, ty: e.ty, t: 0, dur: 0.22, side: e.side });
@@ -107,6 +107,7 @@ function drawUnit(cx, u, t) {
     const w = u.boss ? 150 : 70, x = u.x - w / 2, y = u.y - sz - 12;
     cx.fillStyle = '#000b'; cx.fillRect(x - 2, y - 2, w + 4, 11); cx.fillStyle = u.side === 'p' ? '#4cd04c' : '#e0453a'; cx.fillRect(x, y, w * Math.max(0, u.hp / u.max), 7);
     if (u.side === 'p') { cx.fillStyle = '#000b'; cx.fillRect(x - 2, y + 9, w + 4, 6); cx.fillStyle = u.energy >= 100 ? '#7fe8ff' : '#f3c14b'; cx.fillRect(x, y + 10, w * u.energy / 100, 3); }
+    cx.font = '16px serif'; cx.fillStyle = '#fff'; cx.fillText(JOB_ICON[u.job] || '', x - 22, y + 8);
     if (u.stun > 0) { cx.font = '800 22px Texturina,serif'; cx.fillStyle = '#ffe27a'; cx.fillText('✦✦', u.x - 16, y - 6); }
   }
 }
@@ -155,7 +156,8 @@ async function onOver() {
   else { fx('you_lost', { x: 640, y: 230, s: 2.8, z: 40 }); fx('failure', { x: 640, y: 110, s: 2.4, z: 40 }); }
   await new Promise(r => setTimeout(r, 2300)); if (!V) return;
   const st = BT.st, r = finishBattle(BT.over, st, false); save();
-  const rt = r ? [`${fmt(r.gold)} 🪙`, r.gems && `${r.gems} 💎`, r.tickets && `${r.tickets} 🎫`, r.shard != null && `Mảnh thẻ ${HEROES[r.shard].n}`].filter(Boolean).join(' · ') : '';
+  const rt = r ? [`${fmt(r.gold)} 🪙`, r.gems && `${r.gems} 💎`, r.tickets && `${r.tickets} 🎫`, r.dust && `${r.dust} ✨`, r.shard != null && `Mảnh thẻ ${HEROES[r.shard].n}`].filter(Boolean).join(' · ') : '';
+  if (st.tower) { openModal(`<h2 style="color:${won ? 'var(--gold)' : '#e0594f'}">${won ? '🏆 QUA TẦNG!' : '💀 Thất bại'}</h2><p>Tháp Thử Thách — ${st.name} · ${mmss(BT.t)}</p>${r ? `<div class="card" style="display:inline-block">Phần thưởng: <b class="up">${rt}</b></div>` : '<p class="mut">Mạnh hóa thẻ, chọn đội khắc chế hệ của tầng rồi thử lại.</p>'}<p><button class="gold" data-a="barena_close">Về</button> ${S.tower.tries > 0 ? `<button class="blue" data-a="barena_tower">${won ? 'Tầng ' + (st.n + 1) + ' ▶' : 'Thử lại'} (còn ${S.tower.tries})</button>` : ''}</p>`); return; }
   const next = won && st.n < STAGE_N && S.battle.energy > 0;
   openModal(`<h2 style="color:${won ? 'var(--gold)' : '#e0594f'}">${won ? '🏆 CHIẾN THẮNG!' : '💀 Thất bại'}</h2><p>${CHAPTERS[st.chapter]} — ${st.name} · ${mmss(BT.t)}</p>${r ? `<div class="card" style="display:inline-block">Phần thưởng: <b class="up">${rt}</b>${r.gems ? '<div class="mut">Thưởng lần đầu qua màn</div>' : ''}</div>` : '<p class="mut">Hãy mạnh hóa thẻ (Lên cấp / lên sao), đổi đội hình hoặc dùng Tuyệt Kỹ đúng lúc rồi thử lại nhé.</p>'}<p>
     <button class="gold" data-a="barena_close">Về</button> <button class="blue" data-a="barena_again:${st.n}" ${S.battle.energy > 0 ? '' : 'disabled'}>Đánh lại</button> ${next ? `<button class="blue" data-a="barena_again:${st.n + 1}">Màn ${st.n + 1} ▶</button>` : ''}</p>`);
@@ -164,7 +166,7 @@ async function onOver() {
 /* ---------- Panel: dựng đội hình & mạnh hóa thẻ ---------- */
 function toggleTeam(id) {
   const t = curTeam().slice(), i = t.indexOf(id);
-  if (i >= 0) { if (t.length <= 1) { toast('Cần ít nhất 1 thẻ'); return; } t.splice(i, 1); } else if (t.length >= TEAM_MAX) { toast(`Đội tối đa ${TEAM_MAX} thẻ — bỏ bớt 1 thẻ trước`); return; } else t.push(id);
+  if (i >= 0) { if (t.length <= 1) { toast('Cần ít nhất 1 thẻ'); return; } t.splice(i, 1); } else if (t.length >= TEAM_MAX) { toast(`Đội tối đa ${TEAM_MAX} thẻ — bỏ bớt 1 thẻ trước`); return; } else { if (expBusy().has(id)) { toast('Thẻ này đang đi thám hiểm'); return; } t.push(id); }
   S.battle.team = t; save(); render();
 }
 function pBattle() {
@@ -173,15 +175,18 @@ function pBattle() {
   const stages = []; for (let n = 1; n <= STAGE_N; n++) {
     if (n === 1 || (n - 1) % 10 === 0) stages.push(`<div class="mut" style="margin:8px 0 2px"><b>${CHAPTERS[Math.floor((n - 1) / 10)]}</b></div>`);
     const st = stageDef(n), cl = n <= b.cleared, open = n <= b.cleared + 1;
-    stages.push(`<div class="row" style="margin:3px 0;opacity:${open ? 1 : .45}"><span style="width:26px">${cl ? '✅' : open ? '⚔' : '🔒'}</span><div class="sp">${st.boss ? '👑 ' : ''}<b>${st.name}</b> <span class="mut">sức mạnh ${(st.f * 100).toFixed(0)}% ${cl ? '' : '· thưởng lần đầu ' + (st.boss ? '100💎 +1🎫' : '30💎')}</span></div>
+    stages.push(`<div class="row" style="margin:3px 0;opacity:${open ? 1 : .45}"><span style="width:26px">${cl ? '✅' : open ? '⚔' : '🔒'}</span><div class="sp">${st.boss ? '👑 ' : ''}<b>${st.name}</b> <span class="mut">hệ ${JOB_ICON[st.dom]} · sức mạnh ${(st.f * 100).toFixed(0)}% ${cl ? '' : '· thưởng lần đầu ' + (st.boss ? '100💎 +1🎫' : '30💎')}</span></div>
       ${cl ? `<button class="sm blue" data-a="bsweep:${n}" ${b.energy < 1 ? 'disabled' : ''}>Tự đánh</button>` : ''}<button class="sm gold" data-a="bfight:${n}" ${open && b.energy >= 1 ? '' : 'disabled'}>Chiến</button></div>`);
   }
   const slots = Array.from({ length: TEAM_MAX }, (_, i) => { const id = team[i]; if (id == null) return `<div class="tslot empty">+</div>`; const h = HEROES[id], c = heroCard(h); return `<div class="tslot" data-b="team:${id}" title="Bấm để bỏ khỏi đội">${heroImg(h, 44)}<div class="tn">${h.n}</div><div class="mut">Lv ${S.own[id].lv} · ${'★'.repeat(S.own[id].star)}</div><div class="mut">⚔${c.atk} ❤${c.hp}</div>${i < 2 ? '<span class="front">Tiền tuyến</span>' : ''}</div>`; }).join('');
   const roster_ = roster.map(h => {
     const o = S.own[h.id], c = heroCard(h), sk = SKILL[h.job], inT = team.includes(h.id), cost = heroLvCost(h, o);
-    return `<div class="rc ${inT ? 'in' : ''}" data-b="team:${h.id}" title="${sk.n}: ${sk.d(c.m)}">${heroImg(h, 44)}<div class="rn">${tag(h.r)} ${h.n}</div><div class="mut">Lv ${o.lv}/${heroLvCap(o)} · <span class="stars">${'★'.repeat(o.star)}</span></div><div class="mut">⚔${c.atk} ❤${c.hp} · ${sk.n}</div><div class="mut">mảnh ${o.shard}/${o.star}</div>
-      ${o.lv < heroLvCap(o) ? `<button class="sm" data-a="hlv:${h.id}" ${S.gold < cost ? 'disabled' : ''}>Lên cấp ${fmt(cost)}</button>` : '<span class="mut">Đã tối đa cấp</span>'}</div>`;
+    return `<div class="rc ${inT ? 'in' : ''}" data-b="team:${h.id}" title="${sk.n}: ${sk.d(c.m)}">${heroImg(h, 44)}<div class="rn">${tag(h.r)} ${h.n} ${JOB_ICON[h.job]}</div><div class="mut">Lv ${o.lv}/${heroLvCap(o)} · <span class="stars">${'★'.repeat(o.star)}</span></div><div class="mut">⚔${c.atk} ❤${c.hp} · ${sk.n}</div><div class="mut">mảnh ${o.shard}/${o.star}</div>
+      ${o.lv < heroLvCap(o) ? `<button class="sm" data-a="hlv:${h.id}" ${S.gold < cost ? 'disabled' : ''}>Lên cấp ${fmt(cost)}</button>` : '<span class="mut">Đã tối đa cấp</span>'}${o.star < 6 ? `<button class="sm blue" data-a="bshard:${h.id}" ${S.dust < DUST_COST ? 'disabled' : ''}>+Mảnh ${DUST_COST}✨</button>` : ''}</div>`;
   }).join('');
+  towerTick(); const T = S.tower, tf = towerDef(T.floor + 1);
+  const towerCard = featOn(3) ? `<div class="card"><h3>🗼 Tháp Thử Thách <span class="mut">· đã qua tầng ${T.floor}</span></h3><div class="mut">Leo tầng vô hạn, mỗi ngày 3 lượt. Tầng ${tf.n}: hệ ${JOB_ICON[tf.dom]} ${JOB_NAME[tf.dom]} · sức mạnh ${(tf.f * 100).toFixed(0)}%${tf.boss ? ' · 👑 BOSS' : ''}. Thưởng: vàng, ngọc, Bụi Sao${tf.boss ? ', vé chiêu mộ' : ''}.</div><div class="row" style="margin-top:6px"><span class="sp">Lượt hôm nay: <b>${T.tries}/3</b></span><button class="gold" data-a="btower" ${T.tries > 0 ? '' : 'disabled'}>Leo tầng ${tf.n}</button></div></div>` : lockCard('Tháp Thử Thách', 3);
+  const rs = resonance(team), counter = 'Khắc chế: ' + JOBS.map(j => `${JOB_ICON[j]}>${JOB_ICON[JOB_BEATS[j]]}`).join(' ');
   const gear = ['weapon', 'armor', 'charm', 'potion'].map(sl => `${GSLOT[sl]}: <b>${SPELL_TXT[sl](Math.round(gearBonus(sl) * 100))}</b>`).join(' · ');
   const g = curGeneral(), gb = generalBonus(S.guildLv);
   const genCard = `<div class="card wide"><div class="row"><span class="gp big" style="background-image:url(${g.idle.src})"></span><div class="sp"><h3 style="margin:0">Tướng lĩnh: ${g.n} <span class="mut">· ${g.title}</span></h3><div class="mut">${g.story}</div>
@@ -190,7 +195,8 @@ function pBattle() {
     <div class="mut" style="margin-top:6px">Dựng đội 5 thẻ, mạnh hóa trước rồi vào trận: quân tự đánh 3 đợt quái. Chân dung sáng lên khi đủ năng lượng — chạm để tung chiêu; hạ quái nạp thanh <b>Hiệu Lệnh</b>. Tướng lĩnh đứng sau đội, hạ quái nạp thanh Hiệu Lệnh. Có thể bật AUTO. Trang bị từ rương tăng sức mạnh cả đội.</div></div>
     <div class="card wide"><h3>Đội hình (${team.length}/${TEAM_MAX}) <span class="mut">· sức mạnh ${fmt(teamPower(team))} · thẻ xếp đầu đứng tiền tuyến</span></h3><div class="tslots">${slots}</div>
       <div class="row" style="margin-top:8px"><button class="sm gold" data-a="bautoteam">Gợi ý đội mạnh nhất</button><span class="mut sp">Khả năng thắng màn ${next}: <b style="color:${win >= .7 ? 'var(--good)' : win >= .4 ? 'var(--gold)' : 'var(--bad)'}">~${Math.round(win * 100)}%</b> (ước tính khi bật Auto)</span></div>
-      <div class="mut" style="margin-top:6px">${gear}</div></div>
+      <div class="mut" style="margin-top:6px">${gear}</div><div class="mut" style="margin-top:4px">${counter} (trúng hệ yếu +30%, ngược lại -20%) · Cộng hưởng: <b>${rs.txt.length ? rs.txt.join(' · ') : 'chưa có — xếp ≥3 thẻ cùng hệ hoặc đủ 5 hệ'}</b></div></div>
     <div class="card"><h3>Chiến dịch</h3>${stages.join('')}</div>
+    ${towerCard}
     <div class="card wide"><h3>Mạnh hóa thẻ <span class="mut">(bấm thẻ để thêm/bớt khỏi đội)</span></h3><div class="rcgrid">${roster_ || '<span class="mut">Chưa có thẻ — hãy Chiêu mộ!</span>'}</div></div>`;
 }

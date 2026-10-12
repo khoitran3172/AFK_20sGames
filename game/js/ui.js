@@ -27,7 +27,7 @@ const tag = r => `<span class="tag ${r}">${r}</span>`;
 /* ---------- Tab ---------- */
 const TABS = [
   ['village', 'Công trình', { img: TS('House2') }, 'Công trình & Kho'], ['trade', 'Thương mại', { sheet: 'items', c: 2, r: 24 }, 'Thương mại'],
-  ['gacha', 'Chiêu mộ', { sheet: 'items', c: 0, r: 21 }, 'Chiêu mộ thẻ'], ['battle', 'Đấu Thẻ', { sheet: 'items', c: 2, r: 0 }, 'Đấu Thẻ — Chiến dịch'], ['team', 'Nhân sự', { sheet: 'rogues', c: 0, r: 1 }, 'Nhân sự'],
+  ['afk', 'Treo Máy', { sheet: 'items', c: 3, r: 24 }, 'Treo Máy & Hoạt Động'], ['gacha', 'Chiêu mộ', { sheet: 'items', c: 0, r: 21 }, 'Chiêu mộ thẻ'], ['battle', 'Đấu Thẻ', { sheet: 'items', c: 2, r: 0 }, 'Đấu Thẻ — Chiến dịch'], ['team', 'Nhân sự', { sheet: 'rogues', c: 0, r: 1 }, 'Nhân sự'],
   ['gear', 'Trang bị', { sheet: 'items', c: 5, r: 12 }, 'Trang bị'], ['journey', 'Hành trình', { sheet: 'items', c: 6, r: 21 }, 'Hành Trình 7 Ngày'],
   ['quest', 'Nhiệm vụ', { sheet: 'items', c: 1, r: 21 }, 'Nhiệm vụ & Điểm danh'], ['pass', 'Sổ Hội', { sheet: 'items', c: 0, r: 22 }, 'Sổ Thương Hội'],
   ['rival', 'Xếp hạng', { sheet: 'items', c: 5, r: 17 }, 'Bảng Xếp Hạng'], ['more', 'Khác', { img: TS('Icon_10') }, 'Cài đặt'],
@@ -42,6 +42,7 @@ function renderRes() {
   for (const g of GOODS) { const full = S[g] >= cap * 0.98; chips.push(`<div class="chip ${full ? 'warn' : ''}" style="min-width:84px" title="Kho ${fmt(S[g])}/${fmt(cap)}">${ico(GOOD[g].icon, 22)}${fmt(S[g])}<small>${full ? 'ĐẦY' : ''}</small></div>`); }
   chips.push(`<div class="chip">${gemI()}${fmt(S.gems)}</div>`);
   chips.push(`<div class="chip" style="min-width:60px">${ico(TICKET, 22)}${S.tickets}</div>`);
+  chips.push(`<div class="chip" style="min-width:60px" title="Bụi Sao">✨${S.dust}</div>`);
   if (S.renown) chips.push(`<div class="chip" title="Danh Vọng">🏅 ${S.renown}</div>`);
   return chips.join('');
 }
@@ -186,7 +187,7 @@ function pMore() {
    <div class="row" style="margin-top:8px"><button class="blue" data-a="export">Xuất save</button><button class="blue" data-a="import">Nhập save</button><button class="red" data-a="reset">Xoá save</button></div></div>
   <div class="card"><h3>📊 Chỉ số giữ chân (thiết bị này)</h3><div class="mut">Ngày cài: ${new Date(S.first).toLocaleDateString()} · Ngày thứ ${accDay() + 1} · Tổng ngày đăng nhập: ${S.loginDays}<br>Quay lại D1: <b>${r.d1 ? 'CÓ' : 'chưa'}</b> · D7: <b>${r.d7 ? 'CÓ' : 'chưa'}</b> · Phiên: ${r.sessions}<br>Đặt <code>window.ANALYTICS_URL</code> để gửi sự kiện về server; RR1/RR7 thật phải tính theo cohort phía server (xem DESIGN.md).</div></div>${dev}`;
 }
-const PANELS = { battle: pBattle, village: pVillage, trade: pTrade, gacha: pGacha, team: pTeam, gear: pGear, journey: pJourney, quest: pQuest, pass: pPass, rival: pRival, more: pMore };
+const PANELS = { afk: pAfk, battle: pBattle, village: pVillage, trade: pTrade, gacha: pGacha, team: pTeam, gear: pGear, journey: pJourney, quest: pQuest, pass: pPass, rival: pRival, more: pMore };
 
 /* ---------- Render ---------- */
 let lastMain = '', lastRes = '', lastNav = '', lastG = '', lastHint = '', lastGuild = '';
@@ -247,6 +248,12 @@ function act(a) {
     case 'barena_again': closeModal(); closeArena(); openArena(+x); return;
     case 'barena_close': closeModal(); closeArena(); return;
     case 'bsweep': { const r = sweepStage(+x); if (r) openModal(`<h2 style="color:${r.res === 'win' ? 'var(--gold)' : '#e0594f'}">${r.res === 'win' ? '🏆 Tự đánh: Thắng' : '💀 Tự đánh: Thua'}</h2><p>${r.st.name}</p>${r.r ? `<div class="card" style="display:inline-block">${fmt(r.r.gold)} 🪙${r.r.shard != null ? ' · Mảnh ' + HEROES[r.r.shard].n : ''}</div>` : '<p class="mut">Hãy mạnh hơn rồi thử lại.</p>'}<p><button class="gold" data-a="close">OK</button></p>`); break; }
+    case 'afkclaim': claimAfk(); break; case 'afkfast': afkFast(); break;
+    case 'odeliver': deliverOrder(+x); break; case 'oskip': skipOrder(+x); break;
+    case 'expstart': startExp(x); break; case 'expcol': collectExp(x); break;
+    case 'bshard': buyShard(+x); break;
+    case 'btower': if (openArena(0, true)) { tab = null; lastMain = ''; } break;
+    case 'barena_tower': closeModal(); closeArena(); openArena(0, true); return;
     case 'bautoteam': S.battle.team = autoTeam(); break;
     case 'notify': if (!S.settings.notify) { if (window.Notification) Notification.requestPermission().then(p => { S.settings.notify = p === 'granted'; render(); }); } else S.settings.notify = false; break;
     case 'export': prompt('Sao chép chuỗi save:', btoa(unescape(encodeURIComponent(JSON.stringify(S))))); return;

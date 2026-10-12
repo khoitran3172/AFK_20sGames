@@ -112,3 +112,18 @@ Bảng "📊 Chỉ số giữ chân" trong tab *Khác* chỉ là bản cục b�
 ## 9. VFX
 
 * **Super Pixel Effects Gigapack (bản Free)** — Will Tice / unTied Games: 44 hiệu ứng ở `assets/fx/` (ghi công ở footer; cấm phát tán lại, cấm dùng huấn luyện AI). Engine: `js/fx.js`. Màn triệu hồi gacha: `js/summon.js`.
+
+## 10. Tầng gameplay mới (học từ AFK Arena, Idle Heroes, Raid, AdVenture Capitalist)
+
+| Cơ chế game top | Cách áp dụng | Mở ở |
+|---|---|---|
+| **Idle rewards theo tiến độ chiến dịch** (AFK Arena) | Tab *Treo Máy*: vàng + Bụi Sao (+ ngọc từ màn 10) tích luỹ tối đa 12h (+Quán Trọ), tăng theo màn đã qua; tua nhanh 2h (1 lần miễn phí, 5 lần/ngày) | Cấp 1 |
+| **Vòng khắc chế phe** (AFK Arena factions, Raid) | 5 hệ theo nghề: Mộc > Nông > Khoáng > Dược > Thương > Mộc (+30% / -20% sát thương). Mỗi màn/tầng có hệ chủ đạo; quái có biểu tượng hệ | Chiến đấu |
+| **Cộng hưởng đội hình** | ≥3 thẻ cùng hệ +10% công; ≥4 +18% công +10% máu; ≥5 +25% công +10% máu; đủ 5 hệ +8% công & máu | Chiến đấu |
+| **Đơn hàng / order board** (Idle Miner, Hay Day) | 3 đơn, giá ~2x chợ, cần *giữ hàng* trong kho → kéo Nhà Kho, Auto-Trade, Giờ Vàng vào một quyết định | Cấp 3 |
+| **Nhiệm vụ cho thẻ dự bị** (Idle Heroes, Raid) | Thám Hiểm 1–8h, yêu cầu hệ / độ hiếm / sao; thẻ đang trong đội không đi được → bộ sưu tập 100 thẻ có chỗ dùng | Cấp 5 |
+| **Tháp vô hạn theo lượt ngày** (King's Tower) | 3 lượt/ngày, tầng boss mỗi 10, thưởng ngọc + Bụi Sao + vé chiêu mộ | Cấp 8 |
+| **Tiền tệ nâng thẻ có chủ đích** (Hero Wars, AFK Arena dust) | Bụi Sao: 4 ✨ = 1 mảnh thẻ bất kỳ → giảm cảm giác "bị RNG chặn" của gacha | Mọi lúc |
+| **Mở tính năng theo cấp** | Cấp Thương Hội 1/3/5/8 (không theo ngày) | Toàn game |
+
+Vòng lặp mới trong một ngày: *sáng* nhận Treo Máy + giao đơn + phái thám hiểm dài (8h) → *trưa/tối* Giờ Vàng bán hàng giữ lại + leo Tháp + chiến dịch → *trước khi ngủ* thám hiểm 8h + thương đoàn đêm + để hàng cho đơn mới. Mỗi nhánh có timer khác nhau (1h/2h/4h/8h/12h/12 phút/ngày) nên luôn có "lý do quay lại" ở các khoảng thời gian khác nhau.
