@@ -39,6 +39,11 @@ function sceneInit() {
   function sceneLoop(t) { const dt = Math.min(0.1, (t - last) / 1000); last = t; sceneT += dt; try { sceneUpdate(dt); sceneDraw(); } catch (e) { console.error(e); } requestAnimationFrame(sceneLoop); }
 }
 
+function drawGen(cx, g, kind, t, x, y, sc, flip) {
+  const a = g[kind], im = img(a.src); if (!im.complete || !im.naturalWidth) return;
+  const i = Math.floor(t * a.fps) % a.n, sx = (i % a.cols) * a.fw, sy = Math.floor(i / a.cols) * a.fh;
+  cx.save(); cx.translate(x, y); cx.scale(flip ? -sc : sc, sc); cx.drawImage(im, sx, sy, a.fw, a.fh, -a.fw / 2, -a.fh, a.fw, a.fh); cx.restore();
+}
 function wantPawns(k) { const l = S.lv[k]; return l ? Math.min(5, 1 + Math.floor(l / 8)) : 0; }
 function sceneUpdate(dt) {
   for (const k of BKEYS) {
@@ -102,13 +107,16 @@ function sceneDraw() {
   items.push({ y: 505, d: () => { if (locked('garden')) { cx.save(); cx.filter = 'grayscale(1) brightness(.7)'; } const im = img(TS('Monastery')); if (im.complete) cx.drawImage(im, 340, 215); if (locked('garden')) cx.restore(); } });
   // hạ tầng
   for (const f of FIX) items.push({ y: f.y + f.h, d: () => { const im = img(TS(f.img)); const lk = f.locked && f.locked(); if (lk) { cx.save(); cx.filter = 'grayscale(1) brightness(.7)'; } if (im.complete) cx.drawImage(im, f.x, f.y); if (lk) cx.restore(); hot.push({ x: f.x, y: f.y, w: f.w, h: f.h, tab: f.tab }); } });
+  // tướng lĩnh đi tuần quanh lâu đài
+  { const g = curGeneral(), ph = sceneT * 0.28, gx = 330 + 170 * (0.5 + 0.5 * Math.sin(ph)), right = Math.cos(ph) > 0, gy = 292;
+    items.push({ y: gy, d: () => { cx.fillStyle = 'rgba(0,0,0,.3)'; cx.beginPath(); cx.ellipse(gx, gy + 3, 26, 7, 0, 0, 7); cx.fill(); drawGen(cx, g, 'walk', sceneT, gx, gy, 2.1, !right); plate(g.n + ' · Tướng lĩnh', gx, gy - 134, '#ffe27a'); hot.push({ x: gx - 45, y: gy - 130, w: 90, h: 135, tab: 'battle' }); } }); }
   // pawn
   for (const p of pawns) items.push({ y: p.y, d: () => { const { sheet, f } = pawnSprite(p); drawFrame(sheet, 192, 192, f, p.x, p.y, 0.7, p.face < 0); } });
   // anh hùng được phân công
   for (const slot in S.assign) {
     const h = HEROES[S.assign[slot]]; const pos = slot === 'trade' ? [215, 470] : SITES[slot] && SITES[slot].hero; if (!pos) continue;
     items.push({ y: pos[1] + 30, d: () => {
-      const im = img('assets/rg/rogues.png'); const bob = Math.sin(sceneT * 3 + h.id) * 2;
+      const im = img('assets/rg/' + (h.sh || 'rogues') + '.png'); const bob = Math.sin(sceneT * 3 + h.id) * 2;
       cx.fillStyle = RCOL[h.r] + '55'; cx.beginPath(); cx.ellipse(pos[0], pos[1] + 26, 26, 8, 0, 0, 7); cx.fill();
       cx.imageSmoothingEnabled = false; if (im.complete) cx.drawImage(im, h.c * 32, h.rw * 32, 32, 32, pos[0] - 40, pos[1] - 52 + bob, 80, 80);
       plate(h.n, pos[0], pos[1] - 58, RCOL[h.r]);

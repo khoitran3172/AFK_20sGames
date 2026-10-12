@@ -257,3 +257,48 @@ body.inbattle #hud,body.inbattle #dock,body.inbattle #hint,body.inbattle #golden
 .base.tg{border-radius:0}
 .sc-dup{bottom:auto;top:128px;left:50%;right:auto;transform:translateX(-50%);width:max-content;background:#000b;padding:0 8px;border-radius:9px;z-index:3}
 .sc-d{margin-top:6px}
+
+/* ================= CHIẾN TRƯỜNG (auto-battle) ================= */
+#arena{background:#000}
+#bcv{position:absolute;inset:0;width:1280px;height:720px;image-rendering:pixelated}
+#bhud{position:absolute;inset:0;pointer-events:none}
+#bhud>*{pointer-events:auto;position:absolute}
+.bpause{left:16px;top:14px;width:56px;height:56px;padding:0;font-size:20px;background:url(../assets/ts/ui_btn_blue.png) center/100% 100% no-repeat;border:0;border-radius:0;color:#fff;font-family:var(--fh)}
+.bpill{left:84px;top:20px;height:44px;display:flex;align-items:center;gap:8px;padding:0 18px 0 12px;background:url(../assets/ts/ui_paperdark.png) center/100% 100% no-repeat;font-family:var(--fh);font-size:22px;font-weight:800;color:#fff;text-shadow:0 2px 0 #000;min-width:120px;justify-content:center}
+.bpill.wave{left:222px;min-width:84px}
+.bpill.r{left:auto;right:16px;top:20px;min-width:150px}
+.bpill.r+.bpill.r{top:72px;font-size:16px;min-width:200px}
+.ico-c{width:28px;height:28px;background:url(../assets/ts/Icon_03.png) center/contain no-repeat;display:inline-block}
+.bctl{left:16px;top:80px;display:flex;flex-direction:column;gap:6px}
+.bteam{left:190px;bottom:16px;display:flex;gap:10px;padding:10px 14px;background:rgba(20,60,70,.78);border:3px solid #4aa0b0;border-radius:14px}
+.pt{position:relative;width:112px;padding:6px 4px 4px;text-align:center;background:linear-gradient(#2a3a4a,#1a2530);border:3px solid var(--rc);border-radius:10px;cursor:pointer;user-select:none}
+.pt .ico{margin:0 auto}
+.pt .pn{font-family:var(--fh);font-weight:800;font-size:12px;line-height:1.1;height:28px;display:flex;align-items:center;justify-content:center;color:#fff}
+.pb{height:9px;background:#0009;border:1px solid #000;border-radius:5px;overflow:hidden;margin-top:3px}
+.pb.hp>i{display:block;height:100%;background:linear-gradient(#9be28a,#3a9f3a)}
+.pb.en{height:7px}.pb.en>i{display:block;height:100%;background:linear-gradient(#ffe27a,#d99a1c)}
+.pt.ready{box-shadow:0 0 18px #7fe8ff,inset 0 0 16px #7fe8ff88;border-color:#7fe8ff;animation:rdy .7s infinite alternate}
+.pt.ready .pb.en>i{background:linear-gradient(#bff,#3cc)}
+@keyframes rdy{to{transform:translateY(-8px)}}
+.pt.dead{filter:grayscale(1) brightness(.5);cursor:default}
+.bult{right:26px;bottom:26px;width:150px;height:150px;border-radius:50%;padding:0;border:0;background:conic-gradient(#ffb83d calc(var(--p,0)*1%),#0008 0);display:grid;place-items:center}
+.bult i{position:absolute;inset:12px;border-radius:50%;background:radial-gradient(#2d3a58,#121828);border:4px solid #fff4}
+.bult span{position:relative;font-family:var(--ft);font-size:20px;color:#fff;text-shadow:0 2px 0 #000;letter-spacing:1px}
+.bult.ready{animation:ultp .6s infinite alternate;box-shadow:0 0 30px #ffb83d}
+.bult.ready i{background:radial-gradient(#ffd54a,#b8641a)}
+@keyframes ultp{to{transform:scale(1.1)}}
+#bpauseov{position:absolute;inset:0;background:#000a;z-index:5;display:grid;place-items:center}
+.tslots{display:flex;gap:8px;flex-wrap:wrap}
+.tslot{position:relative;width:104px;padding:6px;text-align:center;background:var(--panel2);border:2px solid var(--edge);border-radius:8px;cursor:pointer;font-size:12px}
+.tslot.empty{display:grid;place-items:center;min-height:120px;font-size:30px;color:#665;border-style:dashed;cursor:default}
+.tslot .tn{font-family:var(--fh);font-weight:800;line-height:1.1;margin:3px 0}
+.tslot .hs,.rc .hs{margin:0 auto}
+.front{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#b4472f;color:#fff;font-size:10px;padding:0 6px;border-radius:8px;white-space:nowrap}
+.rcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.rc{background:var(--panel2);border:2px solid #150f0a;border-radius:8px;padding:6px;text-align:center;font-size:11px;cursor:pointer}
+.rc.in{border-color:#ffd54a;box-shadow:0 0 8px #ffd54a88}
+.rc .rn{font-family:var(--fh);font-weight:800;line-height:1.1;margin:3px 0;font-size:12px}
+.rc button{margin-top:4px}
+.bult .gp{position:absolute;left:50%;top:14px;width:46px;height:55px;margin-left:-23px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;transform:scale(1.5);transform-origin:50% 0}
+.bult span{position:absolute;bottom:22px;font-size:15px}
+.gp.big{display:inline-block;width:46px;height:55px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;transform:scale(1.4);transform-origin:0 50%;margin-right:22px;flex:none}

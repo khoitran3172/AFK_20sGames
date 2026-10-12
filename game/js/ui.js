@@ -7,7 +7,7 @@ const DEV = /[?&]dev=1/.test(location.search);
 function toast(t) { const d = document.createElement('div'); d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 3300); }
 
 /* ---------- icon helpers ---------- */
-const SHEETS = { items: [352, 832], rogues: [224, 224], monsters: [384, 416] };
+const SHEETS = { items: [352, 832], rogues: [224, 224], monsters: [384, 416], animals: [288, 512] };
 function ico(spec, size = 24) {
   if (spec.img) return `<img src="${spec.img}" width="${size}" height="${size}" style="object-fit:contain;flex:none">`;
   const k = size / 32, [sw, sh] = SHEETS[spec.sheet]; return `<span class="ico px" style="width:${size}px;height:${size}px;background:url(assets/rg/${spec.sheet}.png) -${spec.c * 32 * k}px -${spec.r * 32 * k}px/${sw * k}px ${sh * k}px"></span>`;
@@ -15,7 +15,8 @@ function ico(spec, size = 24) {
 const COIN = { img: 'assets/ts/Icon_03.png' };
 const TICKET = { sheet: 'items', c: 0, r: 21 };
 function heroImg(h, size = 48, cls) {
-  const k = size / 32, r = cls || h.r; return `<span class="hs ${r}" style="width:${size + 4}px;height:${size + 4}px;background-size:${224 * k}px ${224 * k}px;background-position:-${h.c * 32 * k}px -${h.rw * 32 * k}px"></span>`;
+  const k = size / 32, r = cls || h.r, sh = h.sh || 'rogues', [sw, sht] = SHEETS[sh];
+  return `<span class="hs ${r}" style="width:${size + 4}px;height:${size + 4}px;background-image:url(assets/rg/${sh}.png);background-size:${sw * k}px ${sht * k}px;background-position:-${h.c * 32 * k}px -${h.rw * 32 * k}px"></span>`;
 }
 function gearImg(g, size = 40) {
   const k = size / 32; return `<span class="gi ${g.r}" style="width:${size + 4}px;height:${size + 4}px;background-size:${352 * k}px ${832 * k}px;background-position:-${g.c * 32 * k}px -${g.rw * 32 * k}px"></span>`;
@@ -246,7 +247,7 @@ function act(a) {
     case 'barena_again': closeModal(); closeArena(); openArena(+x); return;
     case 'barena_close': closeModal(); closeArena(); return;
     case 'bsweep': { const r = sweepStage(+x); if (r) openModal(`<h2 style="color:${r.res === 'win' ? 'var(--gold)' : '#e0594f'}">${r.res === 'win' ? '🏆 Tự đánh: Thắng' : '💀 Tự đánh: Thua'}</h2><p>${r.st.name}</p>${r.r ? `<div class="card" style="display:inline-block">${fmt(r.r.gold)} 🪙${r.r.shard != null ? ' · Mảnh ' + HEROES[r.r.shard].n : ''}</div>` : '<p class="mut">Hãy mạnh hơn rồi thử lại.</p>'}<p><button class="gold" data-a="close">OK</button></p>`); break; }
-    case 'bautodeck': S.battle.deck = autoDeck(); break;
+    case 'bautoteam': S.battle.team = autoTeam(); break;
     case 'notify': if (!S.settings.notify) { if (window.Notification) Notification.requestPermission().then(p => { S.settings.notify = p === 'granted'; render(); }); } else S.settings.notify = false; break;
     case 'export': prompt('Sao chép chuỗi save:', btoa(unescape(encodeURIComponent(JSON.stringify(S))))); return;
     case 'import': { const s = prompt('Dán chuỗi save:'); if (s) { try { S = migrate(JSON.parse(decodeURIComponent(escape(atob(s))))); save(); location.reload(); } catch (e) { toast('Save không hợp lệ'); } } return; }

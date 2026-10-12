@@ -31,6 +31,7 @@ function fresh() {
     prestige: { count: 0, run: 0, totalRenownEarned: 0 },
     tut: { step: 0, done: false, tenUsed: false },
     events: [], sessions: [], settings: { notify: false },
+    general: 'lan',
     battle: { energy: 10, eAt: t, cleared: 0, deck: [], wins: 0, losses: 0 },
     seenGolden: '', nextHint: '',
   };
@@ -93,3 +94,5 @@ const ssrFeatured = () => SSR_IDS[weekIdx(nowMs()) % SSR_IDS.length];
 
 /* ---------- Cấp thương hội ---------- */
 function addGuildXp(n) { S.guildXp += n; while (S.guildXp >= guildXpNeed(S.guildLv)) { S.guildXp -= guildXpNeed(S.guildLv); S.guildLv++; track('guild_level', { lv: S.guildLv }); toast(`🏰 Thương Hội lên Cấp ${S.guildLv}!`); } }
+
+const curGeneral = () => GENERALS.find(g => g.id === S.general) || GENERALS[0];

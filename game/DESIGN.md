@@ -100,17 +100,15 @@ Bảng "📊 Chỉ số giữ chân" trong tab *Khác* chỉ là bản cục b�
 * **32rogues** — Seth Boyles (itch.io): anh hùng, vật phẩm. Dùng thương mại được (trừ dự án NFT/blockchain), **không dùng cho dự án AI sinh tạo/ML**, không phát tán lại. Xem `assets/rg/LICENSE.txt`.
 * Bản gốc tải về nằm ở `assets_itch/` (ngoài thư mục `game/`). Khi xuất bản, chỉ phát hành các file cần dùng trong `game/assets/` và ghi công tác giả.
 
-## 8. Đấu Thẻ (card battle) — gacha có chỗ dùng
+## 8. Chiến trường (auto-battle thời gian thực)
 
-* **Thẻ:** anh hùng nhận từ gacha = *quân* (công/máu/cost theo độ hiếm × sao × cấp, kỹ năng theo nghề); trang bị nhận từ rương = *bùa phép* (sát thương / +máu / hồi căn cứ + rút bài / +công).
-* **Luật:** căn cứ 30 máu, 4 lane, mana +1/lượt (tối đa 8), rút 1 lá/lượt, bộ bài tối đa 12. Hết lượt, quân tự đánh lane đối diện (trống → đánh căn cứ), hai bên cùng chịu sát thương. Có Auto-battle (AI chơi giúp), tốc độ x1/x2/x4 và "Tự đánh" cho màn đã qua.
-* **Chiến dịch:** 30 màn / 3 chương, boss mỗi 5 màn. Tốn **Lệnh Bài** (10, hồi 1 mỗi 8 phút kể cả offline) → thêm một lý do quay lại.
-* **Thưởng:** vàng, thưởng lần đầu (ngọc, vé chiêu mộ), 40–80% rơi *mảnh thẻ* của anh hùng trong bộ bài (lên sao). Nhiệm vụ ngày, Hành trình, thành tựu có mục tiêu Đấu Thẻ.
-* **Cân bằng (mô phỏng `tools/sim.js`, thắng ≥50%):** người chơi 4 phiên/ngày qua ~màn 8 (ngày 1), ~14–16 (ngày 3), ~17–19 (ngày 7–14). Màn 20–30 cần lên sao/cấp lâu dài. AI địch & AI của người chơi trong sim là một; người thật chơi tay sẽ tốt hơn AI.
-* **Chưa làm:** PvP thật, hiệu ứng kỹ năng riêng cho từng thẻ, thẻ phép ngoài trang bị, combo theo nghề, âm thanh.
+* **Thẻ:** 100 anh hùng (id 0–99) làm từ bộ 32rogues: 42 nhân vật người, 31 thú, 27 quái/linh (12 SSR, 22 SR, 30 R, 36 N). Mỗi thẻ có công/máu (cấp, sao), nghề → kỹ năng chủ động. Thẻ lấy từ gacha; mảnh thẻ rơi khi thắng để lên sao.
+* **Đội hình:** dựng sẵn 5 thẻ, mạnh hóa (lên cấp bằng vàng, lên sao bằng mảnh, trang bị từ rương) *trước* khi vào trận.
+* **Trận đấu:** nhìn ngang, 3 đợt quái (boss ở đợt 3 mỗi 5 màn), quân tự di chuyển/đánh; chân dung đội ở dưới: sáng lên khi đủ năng lượng → chạm để tung chiêu (hoặc bật AUTO). Thanh **Hiệu Lệnh** của Tướng lĩnh nạp khi hạ quái. Tốc độ x1/x2/x3, tạm dừng, "Tự đánh" cho màn đã qua (mô phỏng nhanh).
+* **Tướng lĩnh (nhân vật chính):** không phải thẻ; đi tuần trong làng, đứng phía sau đội ở chiến trường, cấp theo Cấp Thương Hội, cho cả đội +công/+máu và Hiệu Lệnh gây sát thương diện rộng + choáng. Hiện có **Nguyệt Lan** (Platformer Character Pack — Merakintsugi, bản sample idle/walk). Thêm tướng mới = thêm 1 mục vào `GENERALS` + sprite.
+* **Lệnh Bài:** 10, hồi 1 mỗi 8 phút (kể cả offline).
+* **Cân bằng (mô phỏng `tools/sim.js`, thắng ≥50% bằng Auto):** 4 phiên/ngày ≈ màn 5–6 ngày 1, ~14 ngày 3. Cần chạy lại sim sau khi đổi dữ liệu.
 
-## 9. VFX & UI gacha / đấu thẻ
+## 9. VFX
 
-* **Super Pixel Effects Gigapack (bản Free)** — Will Tice / unTied Games (itch.io). Dùng thương mại được, bắt buộc ghi công (đã có ở footer game), **không** phát tán lại gói zip, **cấm** dùng làm dữ liệu huấn luyện AI. 44 hiệu ứng dùng trong game nằm ở `assets/fx/` (kèm `LICENSE.txt` gốc); engine phát hiệu ứng: `js/fx.js`.
-* **Gacha:** màn triệu hồi (`js/summon.js`): sạc năng lượng (vòng ma thuật + sét + sóng), flash, lật thẻ từng lá; mỗi độ hiếm một bộ VFX (N lấp lánh → R vòng xanh → SR sét tím + rung → SSR ánh sáng + pháo hoa + tiền vàng + chữ S + rung màn hình). Chạm để bỏ qua.
-* **Đấu thẻ:** hiệu ứng triệu hồi, trúng đòn (nặng hơn khi sát thương lớn), hồi máu, tăng công/giáp, sét cho bùa tấn công, khói đầu lâu khi quân chết, nổ cho boss, banner "LƯỢT CỦA BẠN / ĐỐI THỦ", chữ thắng/thua kèm vương miện + pháo hoa. Thẻ có ruy-băng tên, nền theo độ hiếm, ô lane dạng giấy.
+* **Super Pixel Effects Gigapack (bản Free)** — Will Tice / unTied Games: 44 hiệu ứng ở `assets/fx/` (ghi công ở footer; cấm phát tán lại, cấm dùng huấn luyện AI). Engine: `js/fx.js`. Màn triệu hồi gacha: `js/summon.js`.
