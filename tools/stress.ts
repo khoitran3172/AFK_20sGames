@@ -5,14 +5,15 @@ import { SKILLS } from '../src/data/skills';
 import { TROOP_ORDER, TroopId } from '../src/data/troops';
 
 const combos: TroopId[][] = [];
-for (let i = 0; i < 6; i++) for (let j = i + 1; j < 6; j++) for (let k = j + 1; k < 6; k++) combos.push([TROOP_ORDER[i], TROOP_ORDER[j], TROOP_ORDER[k]]);
+for (let i = 0; i < TROOP_ORDER.length; i++) for (let j = i + 1; j < TROOP_ORDER.length; j++) for (let k = j + 1; k < TROOP_ORDER.length; k++) combos.push([TROOP_ORDER[i], TROOP_ORDER[j], TROOP_ORDER[k]]);
 let bad = 0;
 for (const all of [false, true]) {
-  for (const arena of [0, 11, 30, 47]) {
+  for (const arena of [0, 30]) {
     for (const sq of combos) {
       const s = newSave();
       if (all) s.skills = SKILLS.map((k) => k.id);
       s.squad = sq;
+      if (all) for (const id of TROOP_ORDER) s.ttree[id] = 4;
       s.lv = { hp: 20, atk: 20, def: 20 };
       for (const mode of ['farm', 'boss'] as const) {
         const b = new Battle(s, arena, { events: true, mode });

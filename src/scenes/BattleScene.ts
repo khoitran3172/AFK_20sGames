@@ -10,8 +10,10 @@ import { button, drawBar, iconButton, panel, T } from '../ui/kit';
 import { makeMask, paintIsland, waterBg, TILE } from '../ui/terrain';
 import { getLang, synText, t, troopText } from '../i18n';
 import { GIGA } from './BootScene';
+import { troopIcon } from './ArmyScene';
 
 /** Chiều cao đầu (px khung gốc) để đặt thanh máu */
+const figOf = (set: string) => SET_BY_ID[set]?.fig ?? HEAD[set] ?? 100;
 const HEAD: Record<string, number> = { mc: 40, orc: 38, knight: 118, pike: 175, archer: 118, wizard: 118, healer: 118, rogue: 110, holy: 118, rwar: 118, rlan: 175, rarc: 118, rmonk: 118, rpawn: 110, bwar: 118, blan: 175, barc: 118, bmonk: 118 };
 const TINT_STATUS = { freeze: 0x9ee6ff, burn: 0xffa860, slow: 0xa8b8ff, chaos: 0xe090ff, divine: 0xfff0a0 };
 
@@ -82,11 +84,11 @@ class UnitView {
     // trúng đòn
     if (u.hp < this.lastHp - 0.001) {
       if (set.anims.hurt && !this.busy && this.hurtLock <= 0 && u.hp > 0) { this.play('hurt', true); this.busy = true; this.hurtLock = 0.5; }
-      if (Math.random() < 0.5) scene.fxAt('hit', u.x + (Math.random() - 0.5) * 16, u.y - HEAD[u.set] * 0.4 * sc, 0.55);
+      if (Math.random() < 0.5) scene.fxAt('hit', u.x + (Math.random() - 0.5) * 16, u.y - figOf(u.set) * 0.4 * sc, 0.55);
     }
     this.lastHp = u.hp;
     // màu trạng thái
-    let tint = 0xffffff;
+    let tint = set.tint ?? 0xffffff;
     if (u.hurtT > 0.12) tint = 0xffb0b0;
     else if (u.divine > 0) tint = TINT_STATUS.divine;
     else if (u.freeze > 0) tint = TINT_STATUS.freeze;
@@ -124,6 +126,8 @@ export class BattleScene extends Phaser.Scene {
   create() {
     Farm.viewing = true;
     this.resultShown = false;
+    // scene được dùng lại: xoá tham chiếu tới đối tượng cũ đã bị huỷ
+    this.mcLabel = undefined; this.banner = undefined; this.challengeBtn = undefined; this.squadTxt = []; this.clouds = []; this.fxCount = 0;
     this.views.clear(); this.projViews.clear();
     this.events.once('shutdown', () => { Farm.viewing = false; });
     this.cameras.main.fadeIn(250);
@@ -134,7 +138,7 @@ export class BattleScene extends Phaser.Scene {
 
   // ----------------------------------------------------------------- nền
   buildBackdrop() {
-    const A = ARENAS[getSave().farm];
+    const A = ARENAS[Farm.curArena()];
     const map = MAPS[A.map];
     const wb = waterBg(this, map.bgWater, -10);
     this.tweens.add({ targets: wb.tile, tilePositionX: 64, tilePositionY: 32, duration: 9000, repeat: -1 });
@@ -178,7 +182,7 @@ export class BattleScene extends Phaser.Scene {
     this.hud = new Hud(this);
     const S = getSave();
     // tiêu đề Arena + đợt
-    const A = ARENAS[S.farm];
+    const A = ARENAS[Farm.curArena()];
     const tc = this.add.container(640, 70).setDepth(6000);
     tc.add(panel(this, -170, 0, 340, 52, false, 0.4));
     this.topTxt = T(this, 0, 26, '', 24, { origin: [0.5, 0.5], color: '#3b2a14', stroke: '#fff3cc', sw: 0 });
@@ -204,8 +208,8 @@ export class BattleScene extends Phaser.Scene {
       }, true, 26);
       b.c.setDepth(6000); this.challengeBtn = b.c;
       this.tweens.add({ targets: b.c, scale: 1.04, yoyo: true, repeat: -1, duration: 700 });
-    } else if (Farm.mode === 'boss') {
-      const b = button(this, 1100, 650, 300, 62, t('back'), () => { Farm.startFarm(); this.scene.restart(); }, false, 26);
+    } else if (Farm.mode !== 'farm') {
+      const b = button(this, 1100, 650, 300, 62, Farm.mode === 'tower' ? t('tower_end') : t('back'), () => { if (Farm.mode === 'tower') { Farm.endTower(); return; } Farm.startFarm(); this.scene.restart(); }, false, 26);
       b.c.setDepth(6000);
     }
     iconButton(this, 1236, 188, 'icon4', () => this.scene.start('Village', { arena: getSave().farm }), false, 56).setDepth(6000);
@@ -222,7 +226,7 @@ export class BattleScene extends Phaser.Scene {
     for (const id of S.squad) {
       const def = TROOPS[id];
       this.squadC.add(panel(this, x, 0, 150, 64, false, 0.35));
-      const fr = this.add.image(x + 32, 40, `${id}:idle`, 0).setScale(id === 'pike' ? 0.26 : 0.4).setOrigin(0.5, 0.6);
+      const fr = troopIcon(this, id, x + 32, 56, 48);
       this.squadC.add(fr);
       const tx = T(this, x + 66, 18, '', 22, { color: '#3b2a14', stroke: '#fff3cc', sw: 0 });
       this.squadC.add(tx);
@@ -267,7 +271,12 @@ export class BattleScene extends Phaser.Scene {
   }
 
   // ----------------------------------------------------------------- update
-  update(_t: number, dtMs: number) {
+  update(t: number, dtMs: number) {
+    try { this.tick(dtMs); } catch (e) { if (!this.errLogged) { console.error(e); this.errLogged = true; } }
+    void t;
+  }
+  errLogged = false;
+  tick(dtMs: number) {
     const dt = dtMs / 1000;
     Farm.update(dt);
     const b = Farm.battle!;
@@ -306,7 +315,7 @@ export class BattleScene extends Phaser.Scene {
       if (!s) { s = this.makeProj(p); this.projViews.set(p.id, s); }
       const ang = Math.atan2(p.ty - p.y, p.tx - p.x);
       s.setPosition(p.x, p.y).setDepth(p.y + 200);
-      if (p.kind === 'arrow') s.setRotation(ang);
+      if (p.kind === 'arrow' || p.kind === 'spear') s.setRotation(ang);
     }
     for (const [id, s] of this.projViews) if (!live.has(id)) { s.destroy(); this.projViews.delete(id); }
   }
@@ -314,6 +323,8 @@ export class BattleScene extends Phaser.Scene {
   makeProj(p: Proj): Phaser.GameObjects.Sprite {
     let s: Phaser.GameObjects.Sprite;
     if (p.kind === 'arrow') { s = this.add.sprite(p.x, p.y, p.team === 0 ? 'arrowBlue' : 'arrowRed').setScale(0.7); }
+    else if (p.kind === 'spear') { s = this.add.sprite(p.x, p.y, 'spear').setScale(1.1); }
+    else if (p.kind === 'mag' && p.src.kind === 'summoner') { s = this.add.sprite(p.x, p.y, 'wizProj', 0).setScale(1.4).setBlendMode(Phaser.BlendModes.ADD); s.play({ key: 'wizProj', repeat: -1 }); }
     else if (p.kind === 'fire') { s = this.add.sprite(p.x, p.y, 'fxFire').setScale(1.1).setBlendMode(Phaser.BlendModes.ADD); s.play({ key: 'fxFire', repeat: -1 }); }
     else if (p.kind === 'ice') { s = this.add.sprite(p.x, p.y, 'giga_sparkle_b', 0).setScale(1.2).setBlendMode(Phaser.BlendModes.ADD); s.play({ key: 'giga_sparkle_b', repeat: -1 }); }
     else if (p.kind === 'wave') { s = this.add.sprite(p.x, p.y, 'giga_slash', 0).setScale(1.6).setBlendMode(Phaser.BlendModes.ADD); s.play({ key: 'giga_slash', repeat: -1 }); }
@@ -332,7 +343,7 @@ export class BattleScene extends Phaser.Scene {
       if (!showAlways && u.hp >= u.maxHp * 0.999) continue;
       const set = SET_BY_ID[u.set];
       const w = u.isBoss ? 120 : u === b.mc ? 70 : 38;
-      const y = u.y - (HEAD[u.set] ?? 100) * set.scale * u.scale - 10;
+      const y = u.y - figOf(u.set) * set.scale * u.scale - 10;
       const x = u.x - w / 2;
       const col = u.team === 0 ? (u === b.mc ? 0x4ad06a : 0x59b8ff) : 0xe0503a;
       drawBar(g, x, y, w, u.isBoss ? 9 : 6, u.hp / u.maxHp, col);
@@ -360,9 +371,10 @@ export class BattleScene extends Phaser.Scene {
   mcLabel?: Phaser.GameObjects.Text;
   updateText(b: Battle) {
     const S = getSave();
-    const A = ARENAS[S.farm];
-    this.topTxt.setText(`${t('arena')} ${A.index + 1} · ${A.name}`);
-    if (Farm.mode === 'boss') this.waveTxt.setText(`${t('wave')} ${Math.min(b.wave, b.waves.length)}/${b.waves.length}`);
+    const A = ARENAS[Farm.curArena()];
+    this.topTxt.setText(Farm.mode === 'tower' ? `${t('tower')} · ${t('floor')} ${Math.max(1, b.wave)}` : `${Farm.mode === 'raid' ? t('raid') + ' · ' : ''}${t('arena')} ${A.index + 1} · ${A.name}`);
+    if (Farm.mode === 'tower') this.waveTxt.setText(`${t('floors_cleared', { n: b.cleared })}${(b.wave % 10 === 0 && b.wave > 0) ? ' · ' + t('boss') : ''}`);
+    else if (Farm.mode !== 'farm') this.waveTxt.setText(`${t('wave')} ${Math.min(b.wave, b.waves.length)}/${b.waves.length}`);
     else this.waveTxt.setText(`${t('farming')} · ${t('wave')} ${b.wave}`);
     const boss = b.units.find((u) => u.isBoss && u.alive);
     this.bossName.setText(boss ? `${t('boss')}  ${fmt(boss.hp)}/${fmt(boss.maxHp)}` : '');

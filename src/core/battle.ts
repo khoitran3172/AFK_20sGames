@@ -1,7 +1,8 @@
 // Engine chiến đấu thuần TypeScript (không phụ thuộc Phaser) — chạy được cả trong tools/sim.ts.
 import { ARENAS, ArenaDef, MAPS, MOB_SPEC } from '../data/arenas';
-import { TIER_STAT_MUL, TROOPS, TroopId, activeSynergy } from '../data/troops';
-import { Save, has, mcStats, mods, troopCount } from './state';
+import { TIER_STAT_MUL, TROOPS, TroopId, activeSynergy, treeFx } from '../data/troops';
+import { Save, equipBonus, has, mcStats, mods, troopCount } from './state';
+import { Item, rollItem } from '../data/items';
 
 /** Drop từ trận đánh chỉ là phần phụ; làng mới là nguồn thu AFK chính. */
 export const BATTLE_DROP = 0.3;
@@ -27,7 +28,7 @@ export interface Unit {
 }
 
 export interface Proj {
-  id: number; kind: 'arrow' | 'fire' | 'ice' | 'bolt' | 'wave' | 'mag'; team: Team;
+  id: number; kind: 'arrow' | 'fire' | 'ice' | 'bolt' | 'wave' | 'mag' | 'spear'; team: Team;
   x: number; y: number; tx: number; ty: number; speed: number; dmg: number; aoe: number;
   target: Unit | null; src: Unit; pierce: number; hitIds: number[]; crit: boolean; life: number;
   apply?: 'burn' | 'freeze' | 'none';
@@ -39,7 +40,7 @@ export type Ev =
   | { k: 'banner'; s: string; c: number }
   | { k: 'shake'; a: number };
 
-export interface BattleOpts { events: boolean; mode: 'farm' | 'boss'; lang?: (k: string) => string }
+export interface BattleOpts { events: boolean; mode: 'farm' | 'boss' | 'raid' | 'tower'; lang?: (k: string) => string }
 
 export interface Rewards { gold: number; stones: number; badges: number }
 
@@ -47,7 +48,9 @@ let UID = 1;
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, (a.y - b.y) * 1.6);
 
-const THREAT: Record<string, number> = { knight: 10, pike: 7, mc: 4, rogue: 2.2, wizard: 2, archer: 1.6, healer: 1, holy: 8 };
+const THREAT: Record<string, number> = { knight: 10, pike: 7, paladin: 8.5, mc: 4, rogue: 2.2, wizard: 2, huntress: 1.8, summoner: 1.2, archer: 1.6, healer: 1, holy: 8, spirit: 5 };
+const RAID_MOBS = ['rpawn', 'orc', 'martial', 'rwar', 'rarc'];
+const FRONT = (k: string) => k === 'knight' || k === 'pike' || k === 'holy' || k === 'paladin' || k === 'spirit';
 
 export class Battle {
   S: Save; arena: ArenaDef; opts: BattleOpts;
@@ -55,19 +58,27 @@ export class Battle {
   time = 0; wave = 0; waves: { n: number; boss: boolean }[] = []; waveDelay = 0.6; spawnQueue: { unit: Unit; at: number }[] = [];
   state: 'run' | 'won' | 'lost' = 'run';
   rewards: Rewards = { gold: 0, stones: 0, badges: 0 };
+  drops: Item[] = [];
+  cleared = 0; // tháp: số tầng đã vượt
+  floorStarted = false;
+  curMul = 1; // hệ số chỉ số quái theo tầng
   kills = 0; deaths = 0; mc!: Unit; reviveT = 0; slots: { troop: TroopId; unit: Unit | null; timer: number; idx: number }[] = [];
   holySummoned = false; blackhole = 0; bhX = 760; buff10 = 10; synergy = activeSynergy([]);
   mcAnchorX = 330; flawless = true; bossAlive = false; totalWaveDelay = 0; paused = false;
   m!: ReturnType<typeof mods>;
+  tfx!: (id: TroopId) => ReturnType<typeof treeFx>;
 
   constructor(S: Save, arenaIdx: number, opts: BattleOpts) {
     this.S = S; this.opts = opts;
     this.arena = ARENAS[arenaIdx];
     this.m = mods(S);
     this.synergy = activeSynergy(S.squad);
+    this.tfx = (id: TroopId) => treeFx(S.ttree?.[id] ?? 0, id);
     this.waves = opts.mode === 'boss'
       ? [{ n: 6, boss: false }, { n: 8, boss: false }, { n: 4, boss: true }]
-      : [];
+      : opts.mode === 'raid'
+        ? [{ n: 7, boss: false }, { n: 9, boss: false }, { n: 3, boss: true }]
+        : [];
     this.spawnPlayer();
     if (has(S, 46)) { this.blackhole = 6; this.say('banner', 'blackhole', 0xb98cff); this.fx('fxExplosion2', this.bhX, 470, 2.6); }
   }
@@ -100,7 +111,7 @@ export class Battle {
     const s = this.S, st = mcStats(s);
     this.mc = this.mk(0, 'mc', 'mc', {
       x: 330, y: 480, hp: st.hp, maxHp: st.hp, atk: st.atk, def: st.def, range: st.range, aspd: st.aspd, speed: st.speed,
-      scale: 1, crit: 0.12 + (this.synergy?.id === 'chaos' ? 0 : 0), critDmg: 1.7, threat: 4,
+      scale: 1, crit: Math.min(0.8, 0.12 + equipBonus(s).crit), critDmg: 1.7, threat: 4,
     });
     if (has(s, 23)) this.mc.immuneT = 3;
     this.mc.skillCd = 4;
@@ -123,8 +134,11 @@ export class Battle {
     let hp = (st.hp * base * d.hpMul) / d.count * tier;
     let atk = (st.atk * base * d.atkMul) / d.count * tier;
     let def = st.def * 0.55 * tier;
+    const fx = this.tfx(id);
+    hp *= 1 + fx.hp; atk *= 1 + fx.atk; def *= 1 + fx.def;
     if (id === 'knight' && this.synergy?.id === 'balance') hp *= 1.15;
-    if ((id === 'knight' || id === 'pike') && has(s, 3)) def *= 1.25;
+    if ((id === 'knight' || id === 'paladin') && this.synergy?.id === 'crusade') hp *= 1.15;
+    if ((id === 'knight' || id === 'pike' || id === 'paladin') && has(s, 3)) def *= 1.25;
     if (this.synergy?.id === 'storm' && (id === 'archer' || id === 'wizard')) atk *= 1.25;
     return { hp, atk, def };
   }
@@ -136,8 +150,12 @@ export class Battle {
     if ((id === 'archer' || id === 'wizard') && has(s, 4)) crit += 0.1;
     if (id === 'archer') crit += 0.1;
     if (id === 'rogue') crit += 0.3;
+    if (id === 'huntress') crit += 0.15;
+    const tf = this.tfx(id);
+    crit += tf.crit;
+    if (this.synergy?.id === 'hunt' && (id === 'huntress' || id === 'archer' || id === 'rogue')) crit += 0.2;
     const u = this.mk(0, id, id, {
-      troop: id, x: startX, y: this.laneY(id, idx), hp, maxHp: hp, atk, def, range: d.range, aspd: d.aspd * (this.synergy?.id === 'balance' && id === 'archer' ? 1.1 : 1),
+      troop: id, x: startX, y: this.laneY(id, idx), hp, maxHp: hp, atk, def, range: d.range, aspd: d.aspd * (this.synergy?.id === 'balance' && id === 'archer' ? 1.1 : 1) * (1 + tf.aspd),
       speed: d.speed, scale: 1, ranged: !d.melee, crit, critDmg: id === 'rogue' && s.tiers[id] >= 2 ? 2.1 : 1.7, slot: idx,
     });
     if (id === 'rogue') u.invis = 2;
@@ -159,18 +177,23 @@ export class Battle {
 
   spawnWave() {
     const map = MAPS[this.arena.map];
-    const boss = this.opts.mode === 'boss' ? this.waves[this.wave] : null;
-    const n = boss ? boss.n : this.opts.mode === 'boss' ? 6 : this.mobCount();
+    const raid = this.opts.mode === 'raid';
+    const tower = this.opts.mode === 'tower';
+    const floor = this.wave + 1;
+    if (tower) this.curMul = this.towerMul(floor);
+    const boss = tower ? { n: floor % 10 === 0 ? 4 : 5 + Math.min(7, Math.floor(floor / 3)), boss: floor % 10 === 0 } : this.opts.mode !== 'farm' ? this.waves[this.wave] : null;
+    const n = boss ? boss.n : this.mobCount();
+    const mobList = raid ? RAID_MOBS : map.mobs;
     let t = 0;
     if (boss && boss.boss) {
-      const set = map.boss[Math.floor(Math.random() * map.boss.length)];
+      const set = raid ? 'king' : map.boss[Math.floor(Math.random() * map.boss.length)];
       const u = this.makeEnemy(set, true);
       u.spawnIn = 0.1; u.x = FIELD.w + 120; u.y = (FIELD.top + FIELD.bottom) / 2;
       this.bossAlive = true;
       this.say('banner', 'boss', 0xff6a5a);
     }
     for (let i = 0; i < n; i++) {
-      const set = map.mobs[Math.floor(Math.random() * map.mobs.length)];
+      const set = mobList[Math.floor(Math.random() * mobList.length)];
       const u = this.makeEnemy(set, false);
       u.spawnIn = t; t += rand(0.25, 0.55);
     }
@@ -182,9 +205,10 @@ export class Battle {
 
   makeEnemy(set: string, boss: boolean): Unit {
     const A = this.arena, sp = MOB_SPEC[set] ?? MOB_SPEC.orc;
-    let hp = A.mobHp * sp.hp, atk = A.mobAtk * sp.atk, def = A.mobDef;
+    let hp = A.mobHp * sp.hp * this.curMul, atk = A.mobAtk * sp.atk * this.curMul, def = A.mobDef * Math.sqrt(this.curMul);
     let scale = (sp.scale ?? 1);
-    if (boss) { hp *= 16; atk *= 1.7; def *= 2.2; scale *= 1.7; if (has(this.S, 43)) { atk *= 0.75; def *= 0.75; } }
+    const isRaid = this.opts.mode === 'raid' || this.opts.mode === 'tower';
+    if (boss) { hp *= isRaid ? 9 : 16; atk *= isRaid ? 1.4 : 1.7; def *= 2.2; scale *= isRaid ? 1.3 : 1.7; if (has(this.S, 43) && !isRaid) { atk *= 0.75; def *= 0.75; } }
     const elite = !boss && Math.random() < 0.08;
     if (elite) { hp *= 2.2; atk *= 1.3; scale *= 1.2; }
     const u = this.mk(1, set, 'mob', {
@@ -266,6 +290,8 @@ export class Battle {
       let st = A.killStone * this.m.farmStone * (u.elite ? 2.5 : 1) * BATTLE_DROP;
       this.rewards.gold += g; this.rewards.stones += st;
       if (Math.random() < A.killBadge * this.m.badgeBonus * (u.elite ? 4 : 1) * BATTLE_DROP) { this.rewards.badges += 1; this.txt(u.x, u.y - 100, '+1 ' + (this.opts.lang ? this.opts.lang('badges') : 'Badge'), 0xb9e6ff, true); }
+      const dropP = u.elite ? 0.06 : u.isBoss ? 0 : 0.006;
+      if (Math.random() < dropP) { const it = rollItem(this.arena.index, u.elite ? 1 : 0); this.drops.push(it); this.txt(u.x, u.y - 130, '+ ITEM', 0xffd34d, true); }
       if (u.isBoss) { this.bossAlive = false; this.fx('fxExplosion2', u.x, u.y - 40, 3.2); this.events.length < 400 && this.opts.events && this.events.push({ k: 'shake', a: 10 }); }
       if (has(S, 36)) {
         const near = this.foes(0).filter((e) => e !== u).sort((a, b) => dist(a, u) - dist(b, u)).slice(0, 2);
@@ -281,7 +307,7 @@ export class Battle {
         if (u.troop) {
           const slot = this.slots.find((s) => s.unit === u);
           if (slot) {
-            let t = TROOPS[u.troop].respawn * (has(S, 7) ? 0.8 : 1) * (S.tiers[u.troop] >= 3 ? 0.75 : 1);
+            let t = TROOPS[u.troop].respawn * (has(S, 7) ? 0.8 : 1) * (S.tiers[u.troop] >= 3 ? 0.75 : 1) * Math.max(0.4, 1 - this.tfx(u.troop).respawn);
             slot.timer = t; slot.unit = null;
           }
         }
@@ -289,7 +315,7 @@ export class Battle {
       } else {
         this.deaths++;
         this.txt(u.x, u.y - 100, this.opts.lang ? this.opts.lang('mc_down') : 'down', 0xff6a5a, true);
-        if (this.opts.mode === 'boss') this.state = 'lost';
+        if (this.opts.mode !== 'farm') this.state = 'lost';
         else this.reviveT = 6;
       }
     }
@@ -352,9 +378,25 @@ export class Battle {
     this.waveDelay = 1.5; this.wave = Math.max(0, this.wave - 0);
   }
 
+  /** Tháp: chỉ số quái = 55% mức Arena tiền tuyến, tăng 9% mỗi tầng */
+  towerMul(floor: number) { return 0.55 * Math.pow(1.09, floor - 1); }
+
   updateWaves(dt: number) {
     const enemiesLeft = this.units.some((u) => u.team === 1 && u.alive);
-    if (this.opts.mode === 'boss') {
+    if (this.opts.mode === 'tower') {
+      if (!enemiesLeft) {
+        if (this.floorStarted) {
+          this.floorStarted = false;
+          this.cleared = this.wave;
+          this.heal(this.mc, this.mc.maxHp * 0.25);
+          this.txt(this.mc.x, this.mc.y - 120, `+${this.cleared}F`, 0xffe9a8, true);
+        }
+        this.waveDelay -= dt;
+        if (this.waveDelay <= 0) { this.spawnWave(); this.wave++; this.floorStarted = true; this.waveDelay = 1.4; }
+      }
+      return;
+    }
+    if (this.opts.mode !== 'farm') {
       if (this.state === 'won') return;
       if (!enemiesLeft) {
         if (this.wave >= this.waves.length) { this.win(); return; }
@@ -369,10 +411,13 @@ export class Battle {
 
   win() {
     this.state = 'won';
+    if (this.opts.mode !== 'boss') return; // Raid: phần thưởng do Farm trao
     const b = this.arena.bossReward;
     this.rewards.gold += b.gold * this.m.farmGold;
     this.rewards.stones += b.stones * this.m.farmStone;
     this.rewards.badges += b.badges;
+    this.drops.push(rollItem(this.arena.index, 1, 2));
+    if (this.flawless) this.drops.push(rollItem(this.arena.index, 1, 2));
   }
 
   cleanup(dt: number) {
@@ -385,7 +430,7 @@ export class Battle {
   // ------------------------------------------------------------------ unit AI
   frontX(): number {
     let f = -1;
-    for (const u of this.units) if (u.alive && u.team === 0 && (u.kind === 'knight' || u.kind === 'pike' || u.kind === 'holy')) f = Math.max(f, u.x);
+    for (const u of this.units) if (u.alive && u.team === 0 && FRONT(u.kind)) f = Math.max(f, u.x);
     return f < 0 ? this.mc.x + 60 : f;
   }
 
@@ -474,6 +519,8 @@ export class Battle {
     if (u.team === 0 && u.kind === 'knight') this.updateKnight(u, dt);
     if (u.team === 1 && u.isBoss) this.updateBoss(u, dt);
     if (u.team === 0 && u.kind === 'healer') this.updateHealer(u, dt);
+    if (u.team === 0 && u.kind === 'paladin') this.updatePaladin(u, dt);
+    if (u.team === 0 && u.kind === 'summoner') this.updateSummoner(u, dt);
 
     if (u.stun > 0 || u.freeze > 0) { u.act = 'idle'; return; }
     if (u.cast > 0) { this.updateCast(u, dt); return; }
@@ -485,13 +532,13 @@ export class Battle {
       if (has(this.S, 25)) { const f = 1 - u.hp / u.maxHp; aspd *= 1 + 0.5 * f; }
       if (u.divine > 0) aspd *= 1.3;
     }
-    if (u.team === 0 && this.guardMode() && (u.kind === 'knight' || u.kind === 'pike') && u !== this.mc) spd *= 1.5;
+    if (u.team === 0 && this.guardMode() && (u.kind === 'knight' || u.kind === 'pike' || u.kind === 'paladin') && u !== this.mc) spd *= 1.5;
 
     u.cd -= dt;
     if (!u.target || !u.target.alive || (u.target.invis > 0 && u.team === 1) || u.chaos > 0 || Math.random() < dt * 0.9) u.target = this.pickTarget(u);
 
     // Hộ Giá: tiền tuyến lùi về bảo vệ MC
-    if (u.team === 0 && this.guardMode() && (u.kind === 'knight' || u.kind === 'pike') && u !== this.mc) {
+    if (u.team === 0 && this.guardMode() && (u.kind === 'knight' || u.kind === 'pike' || u.kind === 'paladin') && u !== this.mc) {
       const a = (u.slot / 8) * Math.PI - Math.PI / 2;
       this.moveTo(u, this.mc.x + 70 + Math.cos(a) * 20, this.mc.y + Math.sin(a) * 110, spd, dt);
       u.act = 'walk';
@@ -525,7 +572,7 @@ export class Battle {
       // tránh đứng yên ngay trước mặt (giữ khoảng cách) cho quân xa
     } else {
       // chưa tới tầm: tiến lên (quân hỗ trợ giữ đội hình)
-      if (u.team === 0 && u !== this.mc && !(u.kind === 'knight' || u.kind === 'pike' || u.kind === 'rogue' || u.kind === 'holy')) {
+      if (u.team === 0 && u !== this.mc && !(FRONT(u.kind) || u.kind === 'rogue')) {
         // quân đánh xa: tiến cho tới khi mục tiêu vào tầm, nhưng không vượt qua tiền tuyến
         const front = this.frontX();
         const want = Math.min(tgt.x - reach * 0.85, front - 70);
@@ -553,7 +600,7 @@ export class Battle {
     if (u === this.mc) return Math.max(this.mcAnchorX, front - 150);
     const d = TROOPS[u.kind as TroopId];
     if (!d) return u.x;
-    const off = u.kind === 'wizard' ? -190 : u.kind === 'archer' ? -300 : u.kind === 'healer' ? -340 : u.kind === 'rogue' ? -80 : -40;
+    const off = u.kind === 'wizard' ? -190 : u.kind === 'archer' ? -300 : u.kind === 'healer' ? -340 : u.kind === 'rogue' ? -80 : u.kind === 'huntress' ? -230 : u.kind === 'summoner' ? -320 : -40;
     return Math.max(this.anchorX(u.kind as TroopId), front + off);
   }
 
@@ -566,7 +613,7 @@ export class Battle {
       else if (u === this.mc) hy = 480;
       // lính xa chỉ tiến lên theo tiền tuyến
       const front = Math.min(this.frontX(), 800);
-      if (u.kind === 'knight' || u.kind === 'pike' || u.kind === 'holy') hx = (u.troop ? this.anchorX(u.troop) : this.mc.x + 80) + 130;
+      if (FRONT(u.kind)) hx = (u.troop ? this.anchorX(u.troop) : this.mc.x + 80) + 130;
       void front;
     } else { hx = 200; hy = u.y; }
     if (Math.abs(u.x - hx) > 6 || Math.abs(u.y - hy) > 8) { this.moveTo(u, hx, hy, spd, dt); u.act = 'walk'; }
@@ -637,6 +684,18 @@ export class Battle {
         break;
       }
       case 'healer': break;
+      case 'paladin':
+      case 'spirit':
+        this.hit(u, tgt, u.atk);
+        break;
+      case 'huntress': {
+        const pierce = 1 + (S.tiers.huntress >= 2 ? 1 : 0) + (this.synergy?.id === 'hunt' ? 1 : 0);
+        this.proj('spear', u, tgt, u.atk, 0, 780, pierce);
+        break;
+      }
+      case 'summoner':
+        this.proj('mag', u, tgt, u.atk * 0.8, 0, 420);
+        break;
     }
   }
 
@@ -695,8 +754,9 @@ export class Battle {
     } else if (p.target && p.target.alive) {
       this.hit(p.src, p.target, p.dmg, { fixedCrit: p.crit, mag: p.kind === 'mag' });
       if (p.pierce > 0) {
-        const nxt = foes.filter((e) => e !== p.target && Math.abs(e.y - p.target!.y) < 45 && e.x < p.target!.x + 110 && e.x > p.target!.x - 110)[0];
-        if (nxt) this.hit(p.src, nxt, p.dmg * 0.7, {});
+        const t0 = p.target;
+        const more = foes.filter((e) => e !== t0 && Math.abs(e.y - t0.y) < 48 && e.x > t0.x - 20 && e.x < t0.x + 190).sort((a, b) => a.x - b.x).slice(0, p.pierce);
+        more.forEach((e, k) => this.hit(p.src, e, p.dmg * Math.pow(0.7, k + 1), {}));
       }
     }
   }
@@ -799,7 +859,7 @@ export class Battle {
         if (dist(u, t) < u.range + 150) {
           u.healCd = 1 / u.aspd;
           u.act = 'attack'; u.actId++; u.face = t.x >= u.x ? 1 : -1;
-          const pw = this.S.tiers.healer >= 2 ? 1.2 : 1;
+          const pw = (this.S.tiers.healer >= 2 ? 1.2 : 1) * (1 + this.tfx('healer').heal);
           this.heal(t, this.mc.maxHp * 0.045 * pw * (u.maxHp > 0 ? 1 : 1));
           this.fx('fxHeal', t.x, t.y - 30, 0.9);
         }
@@ -812,6 +872,40 @@ export class Battle {
         for (const a of this.units) if (a.team === 0 && a.alive) this.heal(a, this.mc.maxHp * 0.08 / Math.max(1, this.units.filter((h) => h.kind === 'healer' && h.alive).length));
         this.fx('fxHeal', this.mc.x, this.mc.y - 20, 1.7);
       }
+    }
+  }
+
+  updatePaladin(u: Unit, dt: number) {
+    u.healCd -= dt;
+    if (u.healCd > 0 || u.stun > 0 || u.freeze > 0) return;
+    u.healCd = 3;
+    const S = this.S;
+    const pct = (this.synergy?.id === 'crusade' ? 0.03 : 0.02) * (S.tiers.paladin >= 2 ? 1.2 : 1) * (1 + this.tfx('paladin').heal);
+    let any = false;
+    for (const a of this.units) {
+      if (a.team !== 0 || !a.alive || a.hp >= a.maxHp * 0.995 || Math.abs(a.x - u.x) > 190 || Math.abs(a.y - u.y) > 150) continue;
+      this.heal(a, a.maxHp * pct); any = true;
+    }
+    if (any) this.fx('fxHeal', u.x, u.y - 30, 1.1);
+  }
+
+  updateSummoner(u: Unit, dt: number) {
+    u.healCd -= dt;
+    if (u.healCd > 0 || u.stun > 0 || u.freeze > 0 || !this.foes(0).length) return;
+    u.healCd = 7;
+    const S = this.S;
+    const spirits = this.units.filter((x) => x.kind === 'spirit' && x.alive).length;
+    if (spirits >= 10) return;
+    u.act = 'attack'; u.actId++;
+    const syn = this.synergy?.id === 'spirits';
+    const k = this.troopStat('knight');
+    const mul = 1 + (syn ? 0.3 : 0) + (S.tiers.summoner >= 2 ? 0.2 : 0) + this.tfx('summoner').spirit;
+    for (let i = 0; i < 2; i++) {
+      const sp = this.mk(0, 'spirit', 'spirit', {
+        x: u.x + 30 + i * 22, y: u.y + (i ? 24 : -24), hp: k.hp * 0.6 * mul, maxHp: k.hp * 0.6 * mul, atk: u.atk * 1.2 * mul, def: u.def, range: 62, aspd: 1.1, speed: 135, scale: 1,
+        lifetime: syn ? 18 : 12, threat: 5, ranged: false, slot: i,
+      });
+      this.fx('fxExplosion', sp.x, sp.y - 20, 0.7);
     }
   }
 

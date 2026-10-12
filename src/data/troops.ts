@@ -1,6 +1,6 @@
 // 6 binh chủng. Chỉ số cá thể = (20% chỉ số MC) x hệ số đạo quân / quân số
 // (Inverse Power-to-Count Rule: đông lính -> chỉ số lẻ thấp, ít lính -> tinh nhuệ).
-export type TroopId = 'knight' | 'pike' | 'archer' | 'wizard' | 'healer' | 'rogue';
+export type TroopId = 'knight' | 'pike' | 'archer' | 'wizard' | 'healer' | 'rogue' | 'paladin' | 'huntress' | 'summoner';
 
 export interface TroopDef {
   id: TroopId;
@@ -58,9 +58,27 @@ export const TROOPS: Record<TroopId, TroopDef> = {
     desc: 'Đầu trận tàng hình 2s, dịch chuyển ra sau lưng địch diệt quái đánh xa.',
     tierTraits: ['+25% sát thương chí mạng', '-25% hồi sinh, ngoại hình Hoàng Gia'],
   },
+  paladin: {
+    id: 'paladin', name: 'Thánh Kỵ Sĩ', role: 'Tiền tuyến · Hộ trì', count: 4, maxCount: 5,
+    hpMul: 2.4, atkMul: 0.7, range: 80, aspd: 0.85, speed: 92, respawn: 8, melee: true, lane: 0, scale: 1,
+    desc: 'Hào quang thánh: mỗi 3 giây hồi 2% máu tối đa cho đồng minh quanh mình.',
+    tierTraits: ['+20% hào quang', '-25% hồi sinh, ngoại hình Hoàng Gia'],
+  },
+  huntress: {
+    id: 'huntress', name: 'Xạ Binh Phi Thương', role: 'Tuyến giữa · Sát thương xuyên', count: 4, maxCount: 5,
+    hpMul: 0.7, atkMul: 1.6, range: 300, aspd: 0.9, speed: 100, respawn: 8, melee: false, lane: 1, scale: 1,
+    desc: 'Phóng phi thương xuyên 2 mục tiêu, chí mạng cao.',
+    tierTraits: ['Xuyên thêm 1 mục tiêu', '-25% hồi sinh, ngoại hình Hoàng Gia'],
+  },
+  summoner: {
+    id: 'summoner', name: 'Triệu Hồi Sư', role: 'Hậu phương · Triệu hồi', count: 2, maxCount: 3,
+    hpMul: 0.65, atkMul: 0.9, range: 300, aspd: 0.5, speed: 85, respawn: 12, melee: false, lane: 2, scale: 1,
+    desc: 'Mỗi 7 giây triệu hồi 2 Linh Hồn chiến đấu (tồn tại 12 giây).',
+    tierTraits: ['Linh Hồn mạnh hơn 20%', '-25% hồi sinh, ngoại hình Hoàng Gia'],
+  },
 };
 
-export const TROOP_ORDER: TroopId[] = ['knight', 'pike', 'archer', 'wizard', 'healer', 'rogue'];
+export const TROOP_ORDER: TroopId[] = ['knight', 'pike', 'archer', 'wizard', 'healer', 'rogue', 'paladin', 'huntress', 'summoner'];
 
 export const TIER_NAMES = ['', 'Tân Binh', 'Dày Dạn', 'Hoàng Gia'];
 export const TIER_STAT_MUL = [0, 1, 1.3, 1.75];
@@ -84,9 +102,39 @@ export const SYNERGIES: Synergy[] = [
     desc: '+25% sát thương tầm xa · đòn thường MC thành tia năng lượng.', best: 'Boss khổng lồ di chuyển chậm.' },
   { id: 'chaos', name: 'Hỗn Loạn Phá Địch', need: ['knight', 'wizard', 'rogue'],
     desc: 'Quái bị đóng băng nhận thêm 50% sát thương chí mạng từ Rogue và MC.', best: 'Ải có hậu phương địch nguy hiểm.' },
+  { id: 'crusade', name: 'Thánh Chiến', need: ['paladin', 'knight', 'healer'],
+    desc: '+15% HP Knight & Paladin · hào quang Paladin hồi 3% thay vì 2%.', best: 'Boss đánh lâu, sát thương diện rộng.' },
+  { id: 'hunt', name: 'Cuộc Săn', need: ['huntress', 'archer', 'rogue'],
+    desc: '+20% chí mạng đơn vị xa & Rogue · phi thương xuyên thêm 1 mục tiêu.', best: 'Ải đông quái yếu xếp hàng dài.' },
+  { id: 'spirits', name: 'Hồn Ma Bất Diệt', need: ['summoner', 'wizard', 'healer'],
+    desc: 'Linh Hồn mạnh hơn 30% và tồn tại 18 giây.', best: 'Ải kéo dài, cần nhiều lá chắn thịt.' },
 ];
 
 export function activeSynergy(squad: TroopId[]): Synergy | null {
   for (const s of SYNERGIES) if (s.need.every((t) => squad.includes(t))) return s;
   return null;
+}
+
+
+// ---------------------------------------------------------------- cây nâng quân (4 node / binh chủng)
+export interface TreeFx { hp?: number; atk?: number; def?: number; aspd?: number; crit?: number; count?: number; respawn?: number; heal?: number; spirit?: number }
+export const TROOP_TREE: Record<TroopId, TreeFx[]> = {
+  knight: [{ hp: 0.25 }, { count: 1 }, { def: 0.3 }, { hp: 0.35, respawn: 0.25 }],
+  pike: [{ atk: 0.2 }, { hp: 0.25 }, { count: 1 }, { atk: 0.3, aspd: 0.1 }],
+  archer: [{ crit: 0.1 }, { atk: 0.25 }, { count: 1 }, { atk: 0.3, aspd: 0.15 }],
+  wizard: [{ atk: 0.25 }, { aspd: 0.2 }, { count: 1 }, { atk: 0.4 }],
+  healer: [{ hp: 0.3 }, { heal: 0.25 }, { count: 1 }, { heal: 0.35, respawn: 0.25 }],
+  rogue: [{ crit: 0.15 }, { atk: 0.25 }, { aspd: 0.15 }, { atk: 0.35, crit: 0.15 }],
+  paladin: [{ hp: 0.3 }, { heal: 0.3 }, { count: 1 }, { hp: 0.3, def: 0.3 }],
+  huntress: [{ crit: 0.12 }, { atk: 0.25 }, { count: 1 }, { atk: 0.35, aspd: 0.15 }],
+  summoner: [{ atk: 0.3 }, { hp: 0.3 }, { count: 1 }, { spirit: 0.6, atk: 0.3 }],
+};
+export const TREE_BADGE = [20, 50, 110, 220];
+export const TREE_GOLD = [400, 1200, 3500, 9000]; // x hệ số Arena đã mở
+
+export function treeFx(unlockedNodes: number, id: TroopId): Required<TreeFx> {
+  const out: Required<TreeFx> = { hp: 0, atk: 0, def: 0, aspd: 0, crit: 0, count: 0, respawn: 0, heal: 0, spirit: 0 };
+  const nodes = TROOP_TREE[id];
+  for (let i = 0; i < Math.min(unlockedNodes, nodes.length); i++) for (const [k, v] of Object.entries(nodes[i])) (out as unknown as Record<string, number>)[k] += v as number;
+  return out;
 }

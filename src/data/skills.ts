@@ -60,19 +60,19 @@ export const SKILLS: SkillNode[] = [
 
   // ===== Nhánh C: Huyền Bí & AFK =====
   n(32, 'C', 1, [1], 'Thu Hoạch Nhanh I', '+10% tốc độ farm Vàng.'),
-  n(33, 'C', 1, [1], 'Tinh Luyện I', '+10% tốc độ rơi Đá Tinh Thạch.'),
+  n(33, 'C', 1, [1], 'Tinh Luyện I', '+10% tốc độ rớt Đá Tinh Thạch.'),
   n(34, 'C', 1, [1], 'Tia Lửa Ma Pháp', 'Đòn của MC và Wizard gây Đốt Cháy theo thời gian.'),
   n(35, 'C', 2, [34], 'Băng Phong Diện Rộng', 'Đòn đánh 30% làm chậm 40% tốc chạy/tốc đánh quái.'),
-  n(36, 'C', 2, [34], 'Sấm Sét Liên Hoàn', 'Quái chết phóng tia sét giật sang 2 mục tiêu lân cận.'),
+  n(36, 'C', 2, [34], 'Sấm Sét Liên Hoàn', 'Quái chết là phóng tia sét giật sang 2 con kế bên.'),
   n(37, 'C', 2, [32], 'Thùng Đồ Mở Rộng', 'Hòm AFK tích lũy tối đa 12 giờ (thay vì 8 giờ).'),
   n(38, 'C', 2, [33], 'Tinh Thông Cổ Ngữ', 'Giảm 15% Đá Tinh Thạch khi mở các node kế tiếp.'),
   n(39, 'C', 3, [35], 'Cuồng Phong Càn Quét', 'Đầu mỗi đợt quái, lốc xoáy gom quái vào giữa sàn.'),
   n(40, 'C', 3, [36], 'Đòn Đánh Hoang Tưởng', 'Đòn đánh 10% khiến quái Hỗn Loạn (đánh lẫn nhau).'),
-  n(41, 'C', 3, [37], 'Tích Lũy Siêu Cấp', 'Nhận ngay 2 giờ tài nguyên AFK khi mở Arena mới.'),
-  n(42, 'C', 3, [32], 'Vàng Rơi Đột Biến', 'Quái thường 5% rơi gấp 5 lần Vàng.'),
+  n(41, 'C', 3, [37], 'Tích Lũy Siêu Cấp', 'Lãnh liền 2 giờ tài nguyên AFK khi mở Arena mới.'),
+  n(42, 'C', 3, [32], 'Vàng Rơi Đột Biến', 'Quái thường có 5% rớt gấp 5 lần Vàng.'),
   n(43, 'C', 4, [39], 'Lời Nguyền Suy Yếu', 'Boss giảm 25% Công và Giáp.'),
   n(44, 'C', 4, [40], 'Dòng Chảy Năng Lượng', 'Phép của Wizard hết thời gian niệm (tức thì).'),
-  n(45, 'C', 4, [41], 'Rương Báu May Mắn', '+15% tỉ lệ rơi nguyên liệu hiếm (Huy Hiệu) khi farm.'),
+  n(45, 'C', 4, [41], 'Rương Báu May Mắn', '+15% tỉ lệ rớt nguyên liệu hiếm (Huy Hiệu) khi farm.'),
   n(46, 'C', 5, [43, 44, 45], 'Lỗ Hổng Hư Không', 'Đầu trận triệu hồi Hố Đen hút quái & gây sát thương phép; +25% hiệu suất farm AFK vĩnh viễn.'),
 ];
 

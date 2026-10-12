@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { SYNERGIES, TIER_NAMES, TROOPS, TROOP_ORDER, TroopId, activeSynergy } from '../data/troops';
+import { SYNERGIES, TIER_NAMES, TROOPS, TROOP_ORDER, TROOP_TREE, TreeFx, TroopId, activeSynergy } from '../data/troops';
+import { SET_BY_ID } from '../data/sprites';
 import { Farm } from '../core/farm';
-import { StatKey, evolveTroop, fmt, getSave, mcStats, save, statCost, troopCount, troopTierCost, upgradeStat } from '../core/state';
+import { StatKey, evolveTroop, fmt, getSave, mcStats, save, statCost, troopCount, troopTierCost, treeCost, unlockTreeNode, upgradeStat } from '../core/state';
 import { Hud } from '../ui/hud';
-import { button, iconButton, panel, T, toast } from '../ui/kit';
+import { button, iconButton, modalBack, panel, T, toast } from '../ui/kit';
 import { synText, t, troopText } from '../i18n';
 
 const STATS: { k: StatKey; name: string; desc: string; icon: string }[] = [
@@ -11,14 +12,42 @@ const STATS: { k: StatKey; name: string; desc: string; icon: string }[] = [
   { k: 'atk', name: 'stat_atk', desc: 'stat_atk_d', icon: 'icon5' },
   { k: 'def', name: 'stat_def', desc: 'stat_def_d', icon: 'icon1' },
 ];
+const PER_PAGE = 6;
+const TREE_ROMAN = ['I', 'II', 'III', 'IV'];
+
+export function fxText(fx: TreeFx): string {
+  const out: string[] = [];
+  const pct = (v: number) => `+${Math.round(v * 100)}%`;
+  if (fx.hp) out.push(`${pct(fx.hp)} ${t('tf_hp')}`);
+  if (fx.atk) out.push(`${pct(fx.atk)} ${t('tf_atk')}`);
+  if (fx.def) out.push(`${pct(fx.def)} ${t('tf_def')}`);
+  if (fx.aspd) out.push(`${pct(fx.aspd)} ${t('tf_aspd')}`);
+  if (fx.crit) out.push(`${pct(fx.crit)} ${t('tf_crit')}`);
+  if (fx.heal) out.push(`${pct(fx.heal)} ${t('tf_heal')}`);
+  if (fx.spirit) out.push(`${pct(fx.spirit)} ${t('tf_spirit')}`);
+  if (fx.count) out.push(`+${fx.count} ${t('count')}`);
+  if (fx.respawn) out.push(`-${Math.round(fx.respawn * 100)}% ${t('respawn')}`);
+  return out.join('\n');
+}
+
+/** Icon binh chủng: sprite idle frame 0, đặt chân tại (x, y), cao ~size px */
+export function troopIcon(scene: Phaser.Scene, id: string, x: number, y: number, size: number) {
+  const st = SET_BY_ID[id];
+  const sp = scene.add.sprite(x, y, `${id}:idle`, 0).setOrigin(st.ox, st.oy);
+  sp.setScale(size / (st.fig ?? 118));
+  return sp;
+}
 
 export class ArmyScene extends Phaser.Scene {
   hud!: Hud;
   dyn!: Phaser.GameObjects.Container;
+  page = 0;
+  treeFor: TroopId | null = null;
   constructor() { super('Army'); }
 
   create() {
     Farm.viewing = false;
+    this.treeFor = null;
     this.cameras.main.fadeIn(200);
     this.add.rectangle(640, 360, 1280, 720, 0x1b2a22);
     const g = this.add.graphics();
@@ -26,7 +55,6 @@ export class ArmyScene extends Phaser.Scene {
     this.hud = new Hud(this);
     iconButton(this, 1236, 36, 'icon8', () => this.scene.start('World'), true, 56);
     iconButton(this, 1160, 36, 'icon10', () => this.scene.launch('Settings'), false, 56);
-    // MC động
     const mc = this.add.sprite(215, 250, 'mc:idle', 0).setScale(5.2).setOrigin(0.5, 0.56);
     mc.play('mc:idle');
     this.add.ellipse(215, 302, 150, 26, 0x000000, 0.3).setDepth(-1);
@@ -57,12 +85,17 @@ export class ArmyScene extends Phaser.Scene {
       }, false, 20);
       b.setEnabled(S.gold >= cost);
       c.add(b.c);
-      const ico = this.add.image(262, y + 38, 'icon3').setDisplaySize(26, 26);
-      c.add(ico);
+      c.add(this.add.image(262, y + 38, 'icon3').setDisplaySize(26, 26));
     });
 
-    // --- thẻ quân
-    TROOP_ORDER.forEach((id, i) => this.card(id, i, c));
+    // --- thẻ quân (chia trang)
+    const pages = Math.ceil(TROOP_ORDER.length / PER_PAGE);
+    TROOP_ORDER.slice(this.page * PER_PAGE, this.page * PER_PAGE + PER_PAGE).forEach((id, i) => this.card(id, i, c));
+    c.add(T(this, 440, 104, t('select_squad'), 24, { color: '#ffe9a8' }));
+    for (let p = 0; p < pages; p++) {
+      const b = button(this, 1000 + p * 70, 118, 60, 36, String(p + 1), () => { this.page = p; this.build(); }, this.page !== p, 19);
+      c.add(b.c);
+    }
 
     // --- cộng hưởng
     const syn = activeSynergy(S.squad);
@@ -75,7 +108,8 @@ export class ArmyScene extends Phaser.Scene {
     } else {
       sy.add(T(this, 16, 8, `${t('no_synergy')} — ${SYNERGIES.map((s) => synText(s.id, s).name).join(' · ')}`, 14, { color: '#6b4a20', stroke: '#fff3cc', sw: 0, wrap: 790 }));
     }
-    c.add(T(this, 440, 104, t('select_squad'), 24, { color: '#ffe9a8' }));
+
+    if (this.treeFor) this.treeModal(c, this.treeFor);
   }
 
   card(id: TroopId, i: number, c: Phaser.GameObjects.Container) {
@@ -89,35 +123,69 @@ export class ArmyScene extends Phaser.Scene {
     c.add(cc);
     cc.add(panel(this, 0, 0, 266, 252, false, 0.45));
     if (sel) cc.add(this.add.rectangle(133, 126, 262, 248).setStrokeStyle(4, 0x2fa84a));
-    const sp = this.add.sprite(60, 74, `${id}:idle`, 0).setScale(id === 'pike' ? 0.34 : 0.55).setOrigin(0.5, 0.6);
+    const sp = troopIcon(this, id, 60, 100, 84);
     sp.play(`${id}:idle`);
     cc.add(sp);
     cc.add(T(this, 112, 8, tx.name, 17, { color: '#3b2a14', stroke: '#fff3cc', sw: 0, wrap: 148 }));
     cc.add(T(this, 112, 58, tx.role, 13, { color: '#6b4a20', stroke: '#fff3cc', sw: 0, wrap: 148 }));
     cc.add(T(this, 112, 98, `${t('count')} ${troopCount(S, id)} · ${TIER_NAMES[S.tiers[id]]}`, 14, { color: '#1f5f9a', stroke: '#fff3cc', sw: 0, wrap: 148 }));
-    cc.add(T(this, 12, 128, tx.desc, 13, { color: '#4a3a20', stroke: '#fff3cc', sw: 0, wrap: 242, ls: 0 }));
-    const b1 = button(this, 70, 222, 112, 42, sel ? t('owned') : t('swap'), () => {
+    cc.add(T(this, 12, 124, tx.desc, 13, { color: '#4a3a20', stroke: '#fff3cc', sw: 0, wrap: 242, ls: 0 }));
+    const b1 = button(this, 46, 224, 82, 40, sel ? t('owned') : t('swap'), () => {
       const sq = getSave().squad;
       if (sq.includes(id)) return;
       const out = sq.shift()!;
       sq.push(id);
       toast(this, `${troopText(id, def).name} ⇄ ${troopText(out, TROOPS[out]).name}`, '#bfffd0');
       Farm.refresh(); save(true); this.build();
-    }, !sel, 17);
+    }, !sel, 16);
     b1.setEnabled(!sel);
     cc.add(b1.c);
     const cost = troopTierCost(S, id);
     const lab = cost ? `${t('evolve')} ${cost.badges}` : t('max');
-    const b2 = button(this, 190, 222, 124, 42, lab, () => {
+    const b2 = button(this, 140, 224, 100, 40, lab, () => {
       if (evolveTroop(getSave(), id)) { Farm.refresh(); save(true); toast(this, TIER_NAMES[getSave().tiers[id]], '#ffe27a'); this.build(); }
       else toast(this, cost ? `${t('badges')} ${cost.badges} + ${t('gold')} ${fmt(cost.gold)}` : '', '#ff9a8a');
-    }, false, 17);
+    }, false, 15);
     b2.setEnabled(!!cost && S.badges >= cost.badges && S.gold >= cost.gold);
     cc.add(b2.c);
+    const nodes = S.ttree[id] ?? 0;
+    const b3 = button(this, 224, 224, 70, 40, `${t('tree')} ${nodes}/4`, () => { this.treeFor = id; this.build(); }, true, 14);
+    cc.add(b3.c);
+  }
+
+  treeModal(c: Phaser.GameObjects.Container, id: TroopId) {
+    const S = getSave();
+    const tx = troopText(id, TROOPS[id]);
+    const layer = this.add.container(0, 0).setDepth(100);
+    c.add(layer);
+    layer.add(modalBack(this, 0.6));
+    layer.add(panel(this, 150, 150, 980, 420, true, 0.55));
+    layer.add(T(this, 640, 172, `${tx.name} — ${t('tree_title')}`, 30, { origin: [0.5, 0], color: '#fff6dd' }));
+    const done = S.ttree[id] ?? 0;
+    TROOP_TREE[id].forEach((fx, n) => {
+      const x = 190 + n * 236, y = 240;
+      const unlocked = n < done, next = n === done;
+      layer.add(panel(this, x, y, 216, 240, false, 0.4));
+      if (next) layer.add(this.add.rectangle(x + 108, y + 120, 220, 244).setStrokeStyle(5, 0xff9d00));
+      layer.add(T(this, x + 108, y + 10, TREE_ROMAN[n], 28, { origin: [0.5, 0], color: unlocked ? '#2a6b2a' : '#3b2a14', stroke: '#fff3cc', sw: 0 }));
+      layer.add(T(this, x + 108, y + 56, fxText(fx), 19, { origin: [0.5, 0], align: 'center', color: '#3b2a14', stroke: '#fff3cc', sw: 0, ls: 4 }));
+      if (unlocked) layer.add(T(this, x + 108, y + 200, '✔ ' + t('unlocked'), 20, { origin: [0.5, 0.5], color: '#2a6b2a', stroke: '#fff3cc', sw: 0 }));
+      else if (next) {
+        const cost = treeCost(S, id)!;
+        layer.add(T(this, x + 108, y + 124, `${fmt(cost.badges)} ${t('badges')}\n${fmt(cost.gold)} ${t('gold')}`, 16, { origin: [0.5, 0], align: 'center', color: '#6b4a20', stroke: '#fff3cc', sw: 0 }));
+        const b = button(this, x + 108, y + 206, 150, 40, t('unlock'), () => {
+          if (unlockTreeNode(getSave(), id)) { Farm.refresh(); save(true); toast(this, fxText(fx).replace(/\n/g, ' · '), '#ffe27a'); this.build(); }
+          else toast(this, `${t('badges')} ${fmt(cost.badges)} + ${t('gold')} ${fmt(cost.gold)}`, '#ff9a8a');
+        }, false, 17);
+        b.setEnabled(S.badges >= cost.badges && S.gold >= cost.gold);
+        layer.add(b.c);
+      } else layer.add(T(this, x + 108, y + 200, t('need_req'), 14, { origin: [0.5, 0.5], color: '#8a3b2a', stroke: '#fff3cc', sw: 0, wrap: 190, align: 'center' }));
+    });
+    const close = button(this, 640, 548, 200, 44, t('close'), () => { this.treeFor = null; this.build(); }, true, 20);
+    layer.add(close.c);
   }
 
   update(_t: number, dt: number) {
-    Farm.update(dt / 1000);
-    this.hud.update();
+    try { Farm.update(dt / 1000); this.hud.update(); } catch (e) { console.error(e); }
   }
 }

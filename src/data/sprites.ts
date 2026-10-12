@@ -20,6 +20,8 @@ export interface SpriteSet {
   /** hướng mặc định của sprite: true = nhìn phải */
   faceRight: boolean;
   shadow: number; // bề rộng bóng
+  fig?: number; // chiều cao nhân vật (px khung gốc) để đặt thanh máu / icon
+  tint?: number; // màu phủ cố định (ví dụ Linh Hồn)
 }
 
 const ts = (color: string, unit: string, file: string) => `${TS}/${color}_Units/${unit}/${file}.png`;
@@ -27,7 +29,7 @@ const A = (file: string, fw: number, fh: number, frames: number, fps = 10, loop 
 
 function warrior(color: string, id: string, scale: number): SpriteSet {
   return {
-    id, scale, ox: 0.5, oy: 0.62, faceRight: true, shadow: 60,
+    id, scale, ox: 0.5, oy: 0.62, faceRight: true, shadow: 60, fig: 118,
     anims: {
       idle: A(ts(color, 'Warrior', 'Warrior_Idle'), 192, 192, 8, 8, true),
       walk: A(ts(color, 'Warrior', 'Warrior_Run'), 192, 192, 6, 12, true),
@@ -39,7 +41,7 @@ function warrior(color: string, id: string, scale: number): SpriteSet {
 }
 function lancer(color: string, id: string, scale: number): SpriteSet {
   return {
-    id, scale, ox: 0.5, oy: 0.56, faceRight: true, shadow: 64,
+    id, scale, ox: 0.5, oy: 0.56, faceRight: true, shadow: 64, fig: 175,
     anims: {
       idle: A(ts(color, 'Lancer', 'Lancer_Idle'), 320, 320, 12, 9, true),
       walk: A(ts(color, 'Lancer', 'Lancer_Run'), 320, 320, 6, 12, true),
@@ -89,7 +91,7 @@ function zerie(who: 'Soldier' | 'Orc', id: string, scale: number, atk3: boolean)
     death: A(p('Death'), 100, 100, 4, 8),
   };
   if (atk3) anims.attack3 = A(p('Attack03'), 100, 100, 9, 14);
-  return { id, scale, ox: 0.5, oy: 0.56, faceRight: true, shadow: 46, anims };
+  return { id, scale, ox: 0.5, oy: 0.56, faceRight: true, shadow: 46, fig: 40, anims };
 }
 
 function pawnJob(id: string, tool: string, load: string, act: string, actFrames: number): SpriteSet {
@@ -104,7 +106,26 @@ function pawnJob(id: string, tool: string, load: string, act: string, actFrames:
     },
   };
 }
+function lm(id: string, dir: string, fw: number, fh: number, ox: number, oy: number, scale: number, fig: number, fr: Record<string, number>, files: Record<string, string>, tint?: number): SpriteSet {
+  const f = (n: string) => `assets/heroes/${dir}/${n}.png`;
+  const anims: Record<string, AnimDef> = {
+    idle: A(f('idle'), fw, fh, fr.idle, 8, true),
+    walk: A(f('run'), fw, fh, fr.run, 12, true),
+    attack: A(f(files.attack ?? 'attack'), fw, fh, fr.attack, 14),
+    hurt: A(f('hit'), fw, fh, fr.hit, 12),
+    death: A(f('death'), fw, fh, fr.death, 10),
+  };
+  if (fr.attack2) anims.attack2 = A(f('attack2'), fw, fh, fr.attack2, 14);
+  return { id, scale, ox, oy, faceRight: true, shadow: 50, fig, tint, anims };
+}
 export const SPRITE_SETS: SpriteSet[] = [
+  // --- binh chủng mới + nhân vật sự kiện (LuizMelo, CC0) ---
+  lm('summoner', 'wizard', 140, 140, 0.525, 0.69, 1.7, 53, { idle: 10, run: 8, attack: 13, hit: 3, death: 18 }, {}),
+  lm('spirit', 'wizard', 140, 140, 0.525, 0.69, 1.25, 53, { idle: 10, run: 8, attack: 13, hit: 3, death: 18 }, {}, 0xb98cff),
+  lm('paladin', 'paladin', 180, 180, 0.536, 0.633, 1.8, 51, { idle: 11, run: 8, attack: 7, attack2: 7, hit: 4, death: 11 }, {}),
+  lm('huntress', 'huntress', 150, 150, 0.513, 0.647, 2.05, 42, { idle: 8, run: 8, attack: 5, attack2: 5, hit: 3, death: 8 }, {}),
+  lm('martial', 'martial', 126, 126, 0.54, 0.65, 2.1, 39, { idle: 10, run: 8, attack: 7, attack2: 6, hit: 3, death: 11 }, {}),
+  lm('king', 'king', 160, 111, 0.5, 0.946, 1.6, 54, { idle: 8, run: 8, attack: 4, attack2: 4, hit: 4, death: 6 }, {}),
   // --- dân làng ---
   pawnJob('pv_farm', 'Knife', 'Meat', 'Pawn_Interact_Knife', 4),
   pawnJob('pv_lumber', 'Axe', 'Wood', 'Pawn_Interact_Axe', 6),
@@ -136,6 +157,7 @@ export const SET_BY_ID: Record<string, SpriteSet> = Object.fromEntries(SPRITE_SE
 
 /** Các asset ảnh tĩnh / sheet khác */
 export const IMAGES: Record<string, string> = {
+  spear: 'assets/heroes/huntress/spear.png',
   arrowBlue: `${TS}/Blue_Units/Archer/Arrow.png`,
   arrowRed: `${TS}/Red_Units/Archer/Arrow.png`,
   tilemap1: 'assets/ts/Terrain/Tileset/Tilemap_color1.png',
@@ -199,6 +221,8 @@ for (let i = 1; i <= 12; i++) IMAGES['icon' + i] = `assets/ts/UI_Elements/UI_Ele
 
 /** Spritesheet FX */
 export const FX_SHEETS: Record<string, { file: string; fw: number; fh: number; frames: number; fps: number }> = {
+  wizProj: { file: 'assets/heroes/wizard/proj.png', fw: 50, fh: 50, frames: 4, fps: 12 },
+  wizExp: { file: 'assets/heroes/wizard/explode.png', fw: 50, fh: 50, frames: 7, fps: 14 },
   fxExplosion: { file: 'assets/ts/Particle_FX/Explosion_01.png', fw: 192, fh: 192, frames: 8, fps: 16 },
   fxExplosion2: { file: 'assets/ts/Particle_FX/Explosion_02.png', fw: 192, fh: 192, frames: 10, fps: 16 },
   fxDust: { file: 'assets/ts/Particle_FX/Dust_01.png', fw: 64, fh: 64, frames: 8, fps: 14 },
@@ -219,4 +243,10 @@ export const DECOR_SHEETS: Record<string, { file: string; fw: number; fh: number
   sheepGrass: { file: 'assets/ts/Terrain/Resources/Meat/Sheep/Sheep_Grass.png', fw: 128, fh: 128, frames: 12, fps: 7 },
   wrock1: { file: 'assets/ts/Terrain/Decorations/Rocks_in_the_Water/Water_Rocks_01.png', fw: 64, fh: 64, frames: 16, fps: 8 },
   wrock2: { file: 'assets/ts/Terrain/Decorations/Rocks_in_the_Water/Water_Rocks_02.png', fw: 64, fh: 64, frames: 16, fps: 8 },
+};
+
+/** Atlas icon trang bị (Anvil, 20x20 ô 32px) và icon thành tựu (GTORAVERSE) */
+export const ICON_SHEETS = {
+  items: { file: 'assets/items/items.png', fw: 32, fh: 32 },
+  achv: { file: 'assets/items/achv.png', fw: 32, fh: 32 },
 };

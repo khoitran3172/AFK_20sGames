@@ -9,6 +9,9 @@ import { Hud } from '../ui/hud';
 import { button, iconButton, panel, T, toast } from '../ui/kit';
 import { paintIsland, waterBg } from '../ui/terrain';
 import { t } from '../i18n';
+import { buyOffer, merchantOffers, villageBuff } from '../core/events';
+import { RARITY_CSS, itemName } from '../data/items';
+import { achvIcon } from '../ui/kit';
 
 interface Pawn { spr: Phaser.GameObjects.Sprite; site: number; idx: number; st: 'work' | 'carry' | 'back'; t: number; set: string }
 const RES_COL: Record<string, string> = { gold: '#ffe27a', stones: '#8fe0ff', badges: '#d9b8ff' };
@@ -26,11 +29,13 @@ export class VillageScene extends Phaser.Scene {
   clouds: Phaser.GameObjects.Image[] = [];
 
   constructor() { super('Village'); }
-  init(data: { arena?: number }) { this.arena = data?.arena ?? getSave().farm; }
+  openShopOnStart = false;
+  shopLayer: Phaser.GameObjects.Container | null = null;
+  init(data: { arena?: number; shop?: boolean }) { this.arena = data?.arena ?? getSave().farm; this.openShopOnStart = !!data?.shop; this.shopLayer = null; }
 
   create() {
     Farm.viewing = false;
-    this.pawns = []; this.plates = [];
+    this.pawns = []; this.plates = []; this.cards = null; this.clouds = [];
     const S = getSave();
     this.arena = Math.max(0, Math.min(this.arena, S.unlocked, ARENAS.length - 1));
     const L = layoutFor(this.arena);
@@ -79,6 +84,8 @@ export class VillageScene extends Phaser.Scene {
       this.plates.push(tx);
       plate.setSize(w, 34).setInteractive({ useHandCursor: true });
       plate.on('pointerup', () => { this.sel = s.type; this.buildCards(); });
+      const hit = this.add.rectangle(s.x, s.y + 10, 230, 190, 0xffffff, 0.001).setDepth(5000).setInteractive({ useHandCursor: true });
+      hit.on('pointerup', () => { this.sel = s.type; this.buildCards(); });
       // dân làng
       const n = lv === 0 ? 0 : Math.min(5, 1 + Math.floor(lv / 5));
       for (let k = 0; k < n; k++) this.spawnPawn(i, k);
@@ -88,6 +95,76 @@ export class VillageScene extends Phaser.Scene {
     for (let i = 0; i < 2; i++) this.clouds.push(this.add.image(-200 + i * 700, 120 + i * 90, 'cloud' + (1 + i)).setAlpha(0.75).setDepth(4500).setScale(1.1));
 
     this.buildUi();
+    this.buildEvents(L);
+    if (this.openShopOnStart) { this.openShopOnStart = false; this.openShop(); }
+  }
+
+  /** Thương nhân / địch tấn công hiển thị ngay trong làng đang xem */
+  buildEvents(L: ReturnType<typeof layoutFor>) {
+    const S = getSave();
+    const m = S.ev.merchant;
+    if (m && m.arena === this.arena) {
+      const x = L.door.x + 120, y = L.door.y + 90;
+      this.add.image(x + 46, y + 8, 'houseRed').setOrigin(0.5, 0.9).setScale(0.42).setDepth(y);
+      const npc = this.add.sprite(x, y, 'pv_farm:idle').setOrigin(0.5, 0.62).setScale(0.9).setDepth(y + 1);
+      npc.play('pv_farm:idle');
+      const bub = T(this, x, y - 86, '!', 34, { origin: [0.5, 0.5], color: '#ffe14a' }).setDepth(5600);
+      this.tweens.add({ targets: bub, y: bub.y - 8, yoyo: true, repeat: -1, duration: 500 });
+      const hit = this.add.rectangle(x + 20, y - 30, 160, 130, 0xffffff, 0.001).setDepth(5000).setInteractive({ useHandCursor: true });
+      hit.on('pointerup', () => this.openShop());
+    }
+    const r = S.ev.raid;
+    if (r && r.arena === this.arena) {
+      for (let i = 0; i < 5; i++) {
+        const x = L.castle.x - 140 + i * 70, y = L.castle.y + 120 + (i % 2) * 28;
+        const e = this.add.sprite(x, y, 'rwar:attack').setOrigin(0.5, 0.62).setScale(0.8).setDepth(y).setFlipX(i % 2 === 0);
+        e.play({ key: 'rwar:attack', repeat: -1, delay: i * 170 });
+        const f = this.add.sprite(x + 20, y - 60, 'fxFire').setScale(1.6).setDepth(y + 2).setBlendMode(Phaser.BlendModes.ADD);
+        f.play({ key: 'fxFire', repeat: -1, delay: i * 130 });
+      }
+      this.add.rectangle(640, 360, 1280, 720, 0xff2200, 0.08).setDepth(4400).setBlendMode(Phaser.BlendModes.ADD);
+      const b = button(this, 640, 146, 260, 50, '⚔ ' + t('defend'), () => { Farm.startRaid(); this.scene.start('Battle'); }, true, 22);
+      b.c.setDepth(6000);
+      this.tweens.add({ targets: b.c, scale: 1.06, yoyo: true, repeat: -1, duration: 450 });
+    }
+  }
+
+  openShop() {
+    if (this.shopLayer) return;
+    const S = getSave();
+    if (!S.ev.merchant) return;
+    const layer = this.add.container(0, 0).setDepth(8000);
+    this.shopLayer = layer;
+    layer.add(this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.6).setInteractive());
+    layer.add(panel(this, 240, 130, 800, 460, true, 0.55));
+    layer.add(T(this, 640, 150, t('shop_title'), 32, { origin: [0.5, 0], color: '#fff6dd' }));
+    const offers = merchantOffers(S);
+    const bought = S.ev.merchant.bought;
+    const names = ['offer_crate', 'offer_stones', 'offer_buff'];
+    const icons = ['Silver-Chest', 'Diamond-Crystal', 'Gold-Star'];
+    offers.forEach((o, i) => {
+      const y = 214 + i * 108;
+      layer.add(panel(this, 270, y, 740, 92, false, 0.4));
+      layer.add(achvIcon(this, 318, y + 46, icons[i], 56));
+      layer.add(T(this, 366, y + 14, t(names[i]), 22, { color: '#3b2a14', stroke: '#fff3cc', sw: 0 }));
+      const sub = o.kind === 'stones' ? `+${fmt(o.stones ?? 0)} ${t('stones')}` : o.kind === 'crate' ? `${t('rarity_2')}+ ${t('reward_item')}` : (villageBuff(getSave()) > 1 ? t('buff_on') : '');
+      layer.add(T(this, 366, y + 50, sub, 16, { color: '#6b4a20', stroke: '#fff3cc', sw: 0 }));
+      const done = bought[i];
+      const b = button(this, 920, y + 46, 150, 48, done ? t('sold_out') : `${fmt(o.price)}`, () => {
+        const res = buyOffer(getSave(), i);
+        if (res) {
+          if (res.item) toast(this, `${t('got_item')}: ${itemName(res.item)}`, RARITY_CSS[res.item.r]);
+          else if (res.stones) toast(this, `+${fmt(res.stones)} ${t('stones')}`, '#8fe0ff');
+          else toast(this, t('buff_on'), '#ffe9a8');
+          save(true); layer.destroy(true); this.shopLayer = null; this.openShop();
+        } else toast(this, t('buy_gold'), '#ff9a8a');
+      }, false, 20);
+      if (!done) b.c.add(this.add.image(46, -2, 'icon3').setDisplaySize(26, 26));
+      b.setEnabled(!done && S.gold >= o.price);
+      layer.add(b.c);
+    });
+    const close = button(this, 640, 548, 200, 44, t('close'), () => { layer.destroy(true); this.shopLayer = null; }, true, 20);
+    layer.add(close.c);
   }
 
   spawnPawn(siteIdx: number, k: number) {
@@ -136,7 +213,17 @@ export class VillageScene extends Phaser.Scene {
       const def = SITE_DEF[type];
       const lv = lvOf(S, this.arena, type);
       c.add(panel(this, x, y, w, h, false, 0.45));
-      if (this.sel === type) c.add(this.add.rectangle(x + w / 2, y + h / 2, w - 4, h - 4).setStrokeStyle(4, 0x2fa84a));
+      if (this.sel === type) {
+        const glow = this.add.container(0, 0);
+        const cx = x + w / 2, cy = y + h / 2;
+        // nền sáng + 3 lớp viền phát sáng (cộng màu) để thật nổi bật
+        glow.add(this.add.rectangle(cx, cy, w, h, 0xffd34d, 0.16));
+        glow.add(this.add.rectangle(cx, cy, w + 22, h + 22).setStrokeStyle(14, 0xffd34d, 0.30).setBlendMode(Phaser.BlendModes.ADD));
+        glow.add(this.add.rectangle(cx, cy, w + 10, h + 10).setStrokeStyle(8, 0xffc233, 0.7).setBlendMode(Phaser.BlendModes.ADD));
+        glow.add(this.add.rectangle(cx, cy, w - 2, h - 2).setStrokeStyle(5, 0xff8a00, 1));
+        c.add(glow);
+        this.tweens.add({ targets: glow, alpha: { from: 1, to: 0.6 }, yoyo: true, repeat: -1, duration: 450, ease: 'Sine.inOut' });
+      }
       c.add(this.add.image(x + 38, y + 40, def.icon).setDisplaySize(46, 46).setTint(def.res === 'stones' ? 0x86e0ff : 0xffffff));
       c.add(T(this, x + 72, y + 12, t(def.name), 21, { color: '#3b2a14', stroke: '#fff3cc', sw: 0 }));
       c.add(T(this, x + 72, y + 40, `${t('level')} ${lv}/${MAX_SITE_LV}`, 18, { color: '#6b4a20', stroke: '#fff3cc', sw: 0 }));
@@ -150,11 +237,17 @@ export class VillageScene extends Phaser.Scene {
         else toast(this, t('buy_gold'), '#ff9a8a');
       }, false, 19);
       b.setEnabled(S.gold >= cost);
+      // biểu tượng đồng xu sau giá
+      b.label.x = -16;
+      b.c.add(this.add.image(b.label.x + b.label.width / 2 + 18, -2, 'icon3').setDisplaySize(28, 28));
       c.add(b.c);
     });
   }
 
   update(_t: number, dtMs: number) {
+    try { this.tick(dtMs); } catch (e) { console.error(e); }
+  }
+  tick(dtMs: number) {
     const dt = dtMs / 1000;
     Farm.update(dt);
     this.hud.update();

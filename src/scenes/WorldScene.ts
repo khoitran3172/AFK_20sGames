@@ -3,7 +3,8 @@ import { ARENAS, ARENAS_PER_MAP, MAPS, TOTAL_ARENAS } from '../data/arenas';
 import { Farm } from '../core/farm';
 import { fmt, getSave, power, save } from '../core/state';
 import { Hud } from '../ui/hud';
-import { button, iconButton, modalBack, nine, panel, T, toast } from '../ui/kit';
+import { achvFrame, button, iconButton, iconButtonFrame, modalBack, nine, panel, T, toast } from '../ui/kit';
+import { anyClaimable, loginReady } from '../core/progress';
 import { fillGrass, makeMask, paintIsland, waterBg, TILE } from '../ui/terrain';
 import { getLang, t } from '../i18n';
 
@@ -34,6 +35,7 @@ export class WorldScene extends Phaser.Scene {
   create() {
     const S = getSave();
     Farm.viewing = false;
+    this.selRing = undefined; this.info = undefined as unknown as Phaser.GameObjects.Container; this.layer = undefined as unknown as Phaser.GameObjects.Container; this.clouds = []; this.pulse = []; this.showBubble = false;
     this.mapIdx = Math.min(MAPS.length - 1, Math.floor(S.farm / ARENAS_PER_MAP));
     this.sel = S.farm;
     this.cameras.main.fadeIn(250);
@@ -42,6 +44,7 @@ export class WorldScene extends Phaser.Scene {
     Farm.listeners.push(this.boundChange);
     this.events.once('shutdown', () => { Farm.listeners = Farm.listeners.filter((l) => l !== this.boundChange); });
     if (Farm.offline) this.offlinePopup();
+    else if (!Farm.loginShown && loginReady(getSave())) { Farm.loginShown = true; this.time.delayedCall(400, () => this.scene.start('Quests', { tab: 'login' })); }
   }
 
   // ---------------------------------------------------------------- map
@@ -180,7 +183,7 @@ export class WorldScene extends Phaser.Scene {
       if (locked) { const lk = T(this, a.x, a.y - 54, '🔒', 26, { origin: [0.5, 0.5] }).setDepth(a.y + 2); add(lk); }
       // vùng bấm
       const hit = add(this.add.rectangle(a.x, a.y - 10, 150, 130, 0xffffff, 0.001).setDepth(5000).setInteractive({ useHandCursor: true }));
-      hit.on('pointerdown', () => { this.sel = a.index; this.buildInfo(); this.placeSel(); });
+      hit.on('pointerdown', () => { this.sel = a.index; this.showBubble = true; this.buildInfo(); this.placeSel(); });
     }
 
     // mây trôi
@@ -194,6 +197,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   selRing?: Phaser.GameObjects.Sprite;
+  questDot!: Phaser.GameObjects.Container;
+  dotT = 0;
   placeSel() {
     const a = ARENAS[this.sel];
     if (a.map !== this.mapIdx) { this.selRing?.setVisible(false); return; }
@@ -228,6 +233,14 @@ export class WorldScene extends Phaser.Scene {
     mk(146, 'icon6', t('army'), () => this.scene.start('Army'));
     mk(236, 'icon10', t('settings'), () => this.scene.launch('Settings'));
     mk(326, 'icon4', t('village'), () => this.scene.start('Village', { arena: getSave().farm }));
+    mk(416, 'icon5', t('gear'), () => this.scene.start('Items'));
+    const qb = iconButtonFrame(this, 506, 640, 'achv', achvFrame(this, 'Gift-Box-Red'), () => this.scene.start('Quests'), false, 74).setDepth(6000);
+    T(this, 506, 686, t('quests'), 18, { origin: [0.5, 0.5] }).setDepth(6000);
+    this.questDot = this.add.container(536, 612).setDepth(6001);
+    this.questDot.add([this.add.circle(0, 0, 13, 0xe0302a).setStrokeStyle(2, 0xffffff), T(this, 0, -1, '!', 18, { origin: [0.5, 0.5] })]);
+    const tb = iconButtonFrame(this, 596, 640, 'achv', achvFrame(this, 'Gold-Trophy'), () => this.scene.start('Tower'), false, 74).setDepth(6000);
+    T(this, 596, 686, t('tower_short'), 18, { origin: [0.5, 0.5] }).setDepth(6000);
+    void qb; void tb;
 
     // nút Chiến đấu lớn (góc dưới phải)
     const bb = this.add.container(1170, 606).setDepth(6000);
@@ -250,6 +263,8 @@ export class WorldScene extends Phaser.Scene {
     ch.on('pointerup', () => this.claim());
     this.chestBtn = ch;
 
+    const bg = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.001).setDepth(4000).setInteractive();
+    bg.on('pointerdown', () => { if (this.showBubble) { this.showBubble = false; this.buildInfo(); } });
     this.buildInfo();
   }
 
@@ -275,43 +290,45 @@ export class WorldScene extends Phaser.Scene {
 
   updateTitle() { this.mapTitle.setText(`${this.mapIdx + 1}/4  ${MAPS[this.mapIdx].name[getLang()]}`); }
 
+  /** Bong bóng nhỏ cạnh node được chọn (thay cho thẻ thông tin to ở giữa màn hình). */
+  showBubble = false;
   buildInfo() {
     this.info?.destroy(true);
+    if (!this.showBubble) return;
     const S = getSave();
     const a = ARENAS[this.sel];
-    const c = this.add.container(640, 520).setDepth(6100);
+    if (a.map !== this.mapIdx) return;
+    const W = 440, H = 100;
+    let by = a.y - 60 - H - 30;
+    if (by < 100) by = a.y + 60;
+    const bx = Math.max(8, Math.min(1272 - W, a.x - W / 2));
+    const c = this.add.container(bx, by).setDepth(6100);
     this.info = c;
-    const W = 600, H = 168;
-    c.add(panel(this, -W / 2, 0, W, H, false, 0.5));
+    c.add(panel(this, 0, 0, W, H, false, 0.45));
     const locked = a.index > S.unlocked;
-    const cleared = a.index < S.unlocked;
-    const status = locked ? t('locked') : cleared ? t('cleared') : S.farm === a.index ? t('farming') : '';
-    c.add(T(this, -W / 2 + 28, 16, `${t('arena')} ${a.index + 1} · ${a.name}`, 26, { color: '#3b2a14', stroke: '#fff3cc', sw: 0 }));
-    c.add(T(this, W / 2 - 28, 18, status, 22, { origin: [1, 0], color: locked ? '#8a3b2a' : '#2a6b3a', stroke: '#fff3cc', sw: 0 }));
     const p = power(S);
     const ok = p >= a.recPower;
-    c.add(T(this, -W / 2 + 28, 54, `${t('rec_power')}: ${fmt(a.recPower)}`, 21, { color: '#3b2a14', stroke: '#fff3cc', sw: 0 }));
-    c.add(T(this, W / 2 - 28, 54, `${t('power')}: ${fmt(p)}`, 21, { origin: [1, 0], color: ok ? '#1f7a2a' : '#b02a1a', stroke: '#fff3cc', sw: 0 }));
-    c.add(T(this, -W / 2 + 28, 84, `${t('drops')}: ${fmt(a.killGold)} ${t('gold_drop')} · ${fmt(a.killStone)} ${t('stone_drop')} / kill`, 19, { color: '#5a4524', stroke: '#fff3cc', sw: 0 }));
-    // nút
-    const bY = H - 36;
-    if (!locked) {
-      const vb = button(this, -W / 2 + 96, bY, 156, 54, t('village'), () => this.scene.start('Village', { arena: a.index }), false, 21);
-      c.add(vb.c);
-      const farmBtn = button(this, -W / 2 + 280, bY, 196, 54, t('farm_here'), () => { Farm.setFarmArena(a.index); this.sel = a.index; this.buildMap(); this.buildInfo(); toast(this, `${t('farming')}: ${a.name}`, '#bfffc0'); }, false, 19);
-      farmBtn.setEnabled(S.farm !== a.index);
-      c.add(farmBtn.c);
-      if (a.index === S.unlocked && a.index < TOTAL_ARENAS) {
-        const cb = button(this, W / 2 - 112, bY, 212, 54, t('challenge_boss'), () => {
-          if (power(getSave()) < ARENAS[a.index].recPower) { toast(this, t('not_enough_power'), '#ff9a8a'); }
-          Farm.setFarmArena(a.index); Farm.challenge(); this.scene.start('Battle');
-        }, true, 19);
-        if (!ok) cb.c.setAlpha(0.8);
-        c.add(cb.c);
-      }
-    } else {
-      c.add(T(this, 0, bY, t('need_req') + ' (' + `${t('arena')} ${S.unlocked + 1}` + ')', 20, { origin: [0.5, 0.5], color: '#8a3b2a', stroke: '#fff3cc', sw: 0 }));
+    c.add(T(this, 14, 8, `${a.index + 1} · ${a.name}`, 19, { color: '#3b2a14', stroke: '#fff3cc', sw: 0 }));
+    if (locked) {
+      c.add(T(this, W / 2, 62, `${t('locked')} — ${t('arena')} ${S.unlocked + 1}`, 18, { origin: [0.5, 0.5], color: '#8a3b2a', stroke: '#fff3cc', sw: 0 }));
+      return;
     }
+    c.add(T(this, W - 14, 8, `${fmt(p)}/${fmt(a.recPower)}`, 19, { origin: [1, 0], color: ok ? '#1f7a2a' : '#b02a1a', stroke: '#fff3cc', sw: 0 }));
+    const bY = 66;
+    const close = () => { this.showBubble = false; this.buildInfo(); };
+    c.add(button(this, 66, bY, 110, 42, t('village'), () => this.scene.start('Village', { arena: a.index }), false, 17).c);
+    const fb = button(this, 190, bY, 126, 42, 'Farm', () => { Farm.setFarmArena(a.index); this.sel = a.index; this.showBubble = false; this.buildMap(); this.buildInfo(); toast(this, `${t('farming')}: ${a.name}`, '#bfffc0'); }, false, 17);
+    fb.setEnabled(S.farm !== a.index);
+    c.add(fb.c);
+    if (a.index === S.unlocked && a.index < TOTAL_ARENAS) {
+      const cb = button(this, 346, bY, 132, 42, 'Boss', () => {
+        if (power(getSave()) < ARENAS[a.index].recPower) toast(this, t('not_enough_power'), '#ff9a8a');
+        Farm.setFarmArena(a.index); Farm.challenge(); this.scene.start('Battle');
+      }, true, 19);
+      if (!ok) cb.c.setAlpha(0.8);
+      c.add(cb.c);
+    }
+    void close;
   }
 
   offlinePopup() {
@@ -338,7 +355,12 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(_t: number, dt: number) {
+    try { this.tick(dt); } catch (e) { console.error(e); }
+  }
+  tick(dt: number) {
     Farm.update(dt / 1000);
+    this.dotT -= dt;
+    if (this.dotT <= 0) { this.dotT = 800; this.questDot.setVisible(anyClaimable(getSave())); }
     this.hud.update();
     const S = getSave();
     // hòm AFK

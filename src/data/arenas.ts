@@ -117,5 +117,7 @@ export const MOB_SPEC: Record<string, { hp: number; atk: number; aspd: number; s
   blan: { hp: 1.3, atk: 1.1, aspd: 0.8, speed: 78, range: 105, ranged: false, scale: 1, weight: 1 },
   barc: { hp: 0.7, atk: 1.3, aspd: 0.9, speed: 58, range: 320, ranged: true, scale: 1, weight: 1 },
   bmonk: { hp: 0.8, atk: 1.3, aspd: 0.6, speed: 54, range: 270, ranged: true, scale: 1, weight: 1 },
+  martial: { hp: 0.9, atk: 1.25, aspd: 1.2, speed: 100, range: 62, ranged: false, scale: 1, weight: 1 },
+  king: { hp: 1.5, atk: 1.2, aspd: 0.9, speed: 80, range: 74, ranged: false, scale: 1, weight: 1 },
   bwar: { hp: 1.5, atk: 1.2, aspd: 0.9, speed: 84, range: 72, ranged: false, scale: 1, weight: 1 },
 };

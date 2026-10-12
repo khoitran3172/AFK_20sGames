@@ -126,3 +126,24 @@ export function modalBack(scene: Phaser.Scene, alpha = 0.6): Phaser.GameObjects.
 export function pop(scene: Phaser.Scene, o: Phaser.GameObjects.GameObject) {
   scene.tweens.add({ targets: o, scale: 1.18, yoyo: true, duration: 110 });
 }
+
+/** Icon thành tựu (atlas GTORAVERSE) theo tên */
+export function achvFrame(scene: Phaser.Scene, name: string): number {
+  const names = scene.cache.json.get('achvNames') as string[];
+  const i = names.indexOf(name);
+  return i < 0 ? 0 : i;
+}
+export function achvIcon(scene: Phaser.Scene, x: number, y: number, name: string, size = 40) {
+  return scene.add.image(x, y, 'achv', achvFrame(scene, name)).setDisplaySize(size, size);
+}
+export function iconButtonFrame(scene: Phaser.Scene, x: number, y: number, tex: string, frame: number, onClick: () => void, red = false, size = 70): Phaser.GameObjects.Container {
+  const c = scene.add.container(x, y);
+  const bg = scene.add.image(0, 0, red ? 'roundRed' : 'roundBlue').setDisplaySize(size, size);
+  const ic = scene.add.image(0, -2, tex, frame).setDisplaySize(size * 0.62, size * 0.62);
+  c.add([bg, ic]);
+  c.setSize(size, size).setInteractive({ useHandCursor: true });
+  c.on('pointerdown', () => c.setScale(0.92));
+  c.on('pointerup', () => { c.setScale(1); onClick(); });
+  c.on('pointerout', () => c.setScale(1));
+  return c;
+}

@@ -1,6 +1,6 @@
 // Kinh tế làng: mỗi Arena có 1 làng (4 công trình). Làng của MỌI Arena đã mở đều sản xuất song song.
 import { ARENAS } from '../data/arenas';
-import { Rates, Save, has } from './state';
+import { Rates, Save, bump, equipBonus, has } from './state';
 
 export type SiteType = 'farm' | 'lumber' | 'crystal' | 'forge';
 export const SITE_TYPES: SiteType[] = ['farm', 'lumber', 'crystal', 'forge'];
@@ -24,8 +24,9 @@ export function siteRate(S: Save, arena: number, t: SiteType): number {
   if (!L) return 0;
   const d = SITE_DEF[t];
   let r = d.base * ARENAS[arena].scale * lvMult(L);
-  if (t === 'farm' || t === 'lumber') r *= has(S, 32) ? 1.1 : 1;
-  if (t === 'crystal') r *= has(S, 33) ? 1.1 : 1;
+  const eb = equipBonus(S);
+  if (t === 'farm' || t === 'lumber') r *= (has(S, 32) ? 1.1 : 1) * (1 + eb.gold);
+  if (t === 'crystal') r *= (has(S, 33) ? 1.1 : 1) * (1 + eb.stone);
   if (t === 'forge') r *= has(S, 45) ? 1.15 : 1;
   if (has(S, 46)) r *= 1.25;
   return r;
@@ -44,6 +45,7 @@ export function upgradeSite(S: Save, arena: number, t: SiteType): boolean {
   if (!S.vil) S.vil = {};
   if (!S.vil[arena]) S.vil[arena] = [0, 0, 0, 0];
   S.vil[arena][SITE_TYPES.indexOf(t)] = L + 1;
+  bump(S, 'villageUps');
   return true;
 }
 

@@ -120,7 +120,6 @@ export class SkillScene extends Phaser.Scene {
   }
 
   update(_t: number, dt: number) {
-    Farm.update(dt / 1000);
-    this.hud.update();
+    try { Farm.update(dt / 1000); this.hud.update(); } catch (e) { console.error(e); }
   }
 }

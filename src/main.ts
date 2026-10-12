@@ -13,8 +13,12 @@ import { ArmyScene } from './scenes/ArmyScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { ResultScene } from './scenes/ResultScene';
 import { VillageScene } from './scenes/VillageScene';
+import { ItemsScene } from './scenes/ItemsScene';
+import { QuestScene } from './scenes/QuestScene';
+import { TowerScene } from './scenes/TowerScene';
 import { Farm } from './core/farm';
 import { getSave } from './core/state';
+import { rollItem } from './data/items';
 
 export const W = 1280;
 export const H = 720;
@@ -28,10 +32,10 @@ const game = new Phaser.Game({
   pixelArt: true,
   roundPixels: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [BootScene, WorldScene, VillageScene, BattleScene, SkillScene, ArmyScene, SettingsScene, ResultScene],
+  scene: [BootScene, WorldScene, VillageScene, ItemsScene, QuestScene, TowerScene, BattleScene, SkillScene, ArmyScene, SettingsScene, ResultScene],
   input: { activePointers: 2 },
   fps: { forceSetTimeOut: location.search.includes('debug') },
 });
 
 (window as unknown as { __game: Phaser.Game }).__game = game;
-if (location.search.includes('debug')) (window as unknown as Record<string, unknown>).__dbg = { Farm, getSave };
+if (location.search.includes('debug')) (window as unknown as Record<string, unknown>).__dbg = { Farm, getSave, rollItem };

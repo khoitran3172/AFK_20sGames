@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DECOR_SHEETS, FX_SHEETS, IMAGES, SPRITE_SETS } from '../data/sprites';
+import { DECOR_SHEETS, FX_SHEETS, ICON_SHEETS, IMAGES, SPRITE_SETS } from '../data/sprites';
 import { initTerrain } from '../ui/terrain';
 import { load as loadSave } from '../core/state';
 import { Farm } from '../core/farm';
@@ -34,6 +34,8 @@ export class BootScene extends Phaser.Scene {
     }
     for (const [k, d] of Object.entries(FX_SHEETS)) this.load.spritesheet(k, d.file, { frameWidth: d.fw, frameHeight: d.fh });
     for (const [k, d] of Object.entries(DECOR_SHEETS)) this.load.spritesheet(k + 'S', d.file, { frameWidth: d.fw, frameHeight: d.fh });
+    for (const [k, d] of Object.entries(ICON_SHEETS)) this.load.spritesheet(k, d.file, { frameWidth: d.fw, frameHeight: d.fh });
+    this.load.json('achvNames', 'assets/items/achv.json');
     this.load.json('gigafx', 'assets/fx/fx.json');
     for (const n of GIGA_NAMES) this.load.image('giga_' + n, `assets/fx/${n}.png`);
   }

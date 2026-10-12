@@ -1,0 +1,15 @@
+import { newSave, addItem, equipItem, mergeAll, mergeCount, mergeOnce, salvageItem, equipBonus, mcStats, power, isEquipped } from '../src/core/state';
+import { makeItem, rollItem, BAG_CAP } from '../src/data/items';
+const s = newSave(); s.unlocked = 10;
+const p0 = power(s);
+for (let i = 0; i < 30; i++) addItem(s, makeItem('weapon', 0));
+console.log('bag', s.items.length, 'mergeable r0', mergeCount(s, 0));
+equipItem(s, s.items[0]);
+const out = mergeAll(s, 0);
+console.log('merged ->', out.length, 'items r1; bag', s.items.length, 'equipped still present:', isEquipped(s, s.items.find((x) => x.id === s.equip.weapon)!));
+const w = makeItem('weapon', 4); addItem(s, w); equipItem(s, w);
+console.log('bonus', JSON.stringify(equipBonus(s)), 'power', p0, '->', power(s), 'atk', mcStats(s).atk.toFixed(1));
+for (let i = 0; i < 80; i++) addItem(s, rollItem(5));
+console.log('bag cap', s.items.length, '<=', BAG_CAP, 'stones from overflow', s.stones.toFixed(2));
+const cheap = s.items.find((x) => !isEquipped(s, x))!; console.log('salvage', salvageItem(s, cheap).toFixed(2), 'equipped salvage ->', salvageItem(s, w));
+let dist = [0,0,0,0,0]; for (let i = 0; i < 4000; i++) dist[rollItem(i % 48).r]++; console.log('rarity dist overall', dist);

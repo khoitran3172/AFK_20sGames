@@ -53,6 +53,24 @@ Chỉnh `REC_K`, `STAT_COST_GROWTH`, `LV_GROWTH`, `killGold` và chạy lại `n
 * Hai ngôn ngữ vi/en: tiếng Việt cần VT323 (chỉ font pixel đủ 74/74 ký tự có dấu trong các font đã thử), tiếng Anh dùng Pixelify Sans.
   Màn Cài đặt có dòng thử dấu tiếng Việt để kiểm tra lỗi font.
 
+
+## 10. Hệ thống mở rộng (giai đoạn A, D, F, E, C)
+**A. Trang bị & Rèn đồ** — 6 ô (Vũ khí, Mũ, Giáp, Ủng, Nhẫn, Bùa), 5 độ hiếm (Thường → Huyền Thoại), dòng chính theo ô + 0–3 dòng phụ ngẫu nhiên.
+Đồ rớt từ Boss (1–2 món, ≥ Tốt), Elite (6%) và quái thường (0.6%); túi 60 ô, đầy thì tự rã ra Đá. Rèn: gộp 3 món cùng ô + cùng độ hiếm → 1 món hiếm hơn. Rã đồ đổi Đá Tinh Thạch. (`src/data/items.ts`, `src/scenes/ItemsScene.ts`)
+
+**D. Nhiệm vụ ngày + Thành tựu + Quà đăng nhập** — 5 nhiệm vụ/ngày (chọn theo ngày), thưởng thêm khi xong cả 5; 15 thành tựu × 3 bậc (Đồng/Bạc/Vàng); quà đăng nhập 7 ngày không phạt nghỉ.
+Thưởng tính theo "số phút thu nhập hiện tại" nên luôn có ý nghĩa ở mọi giai đoạn. Dùng giờ máy khách (chưa có server) — đổi giờ hệ thống có thể gian lận. (`src/core/progress.ts`, `src/scenes/QuestScene.ts`)
+
+**F. Binh chủng mới + cây nâng quân** — Thánh Kỵ Sĩ (hào quang hồi máu), Xạ Binh Phi Thương (phi thương xuyên), Triệu Hồi Sư (triệu Linh Hồn); 3 bộ cộng hưởng mới (Thánh Chiến, Cuộc Săn, Hồn Ma Bất Diệt).
+Mỗi binh chủng (cả 9) có cây 4 node bằng Huy Hiệu + Vàng (máu/công/giáp/tốc đánh/chí mạng/hồi máu/quân số/hồi sinh). Tối đa 9 quân trong 3 đạo. (`src/data/troops.ts: TROOP_TREE`)
+
+**E. Sự kiện làng** — tính theo thời gian chơi (không bị phạt khi offline). *Thương nhân* ghé một làng ngẫu nhiên 12 phút: rương trang bị hiếm, bao Đá, bùa +50% thu nhập làng 30 phút. *Địch tấn công*: 15 phút để đem đội hình ra giữ làng (trận 3 đợt, thủ lĩnh Medieval King); thắng được thưởng và trang bị, bỏ qua thì mất tối đa 15% Vàng. (`src/core/events.ts`)
+
+**C. Tháp Vô Tận** — 3 lượt leo/ngày, leo liên tục tới khi Thủ Lĩnh ngã; Boss mỗi 10 tầng; quái = 55% sức Arena tiền tuyến, +9%/tầng; hồi 25% máu giữa các tầng; thưởng theo số tầng vượt + trang bị Hiếm+ ở tầng Boss. (`src/core/tower.ts`)
+
+## 11. Ngôn ngữ
+Tiếng Việt viết theo **giọng miền Nam** (xài, vô, coi, ráng, lẹ, hổng, nè, nha, lãnh, rớt…), tiếng Anh song song. Xem `src/i18n.ts`.
+
 ## 9. Còn thiếu / việc tiếp theo
 * Âm thanh/nhạc.
 * Wizard dùng Monk tím, Rogue dùng Pawn dao (Tiny Swords free pack không có Wizard/Rogue). Gói Zerie đầy đủ 22 nhân vật ($2.50) hoặc gói Enemy Pack của Pixel Frog sẽ thay được.
