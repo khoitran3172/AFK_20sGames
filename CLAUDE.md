@@ -44,3 +44,6 @@ Arena sau mạnh gấp **5×** (ARENA_STEP; 5 Arena đầu dốc nhẹ hơn: EAR
 2. Sim mới: ~180h cho 48 Arena (Arena 2 ≈ 2h là bức tường đầu). Cân nhắc làm mượt đoạn đầu; sim chưa tính trang bị/cường hóa/sự kiện/tháp/nhiệm vụ.
 3. Chưa có âm thanh; Wizard (Monk tím)/Rogue (Pawn dao) là sprite tạm; map chưa phong cách tranh vẽ; chưa có server (nhiệm vụ/đăng nhập dựa giờ máy).
 4. Ý tưởng chưa làm: Chuyển sinh (Prestige, đã bỏ), kỹ năng bấm tay cho Thủ Lĩnh, affix/cơ chế riêng cho Arena & Boss, thú cưng, bảng xếp hạng (cần server).
+
+## Roadmap
+Kế hoạch mở rộng đã chọn nằm ở `docs/ROADMAP.md` (mục A: 13 mục; mục C: đề xuất 21–40 chờ chọn). Đọc trước khi bắt đầu tính năng mới.

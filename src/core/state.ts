@@ -115,6 +115,12 @@ export function save(force = false) {
   S.itemSeq = getSeq();
   try { const raw = JSON.stringify(S); localStorage.setItem(KEY, raw); localStorage.setItem(KEY + '_s', sig(raw)); } catch { /* ignore */ }
 }
+/** Xuất/nhập save thô (dùng cho đồng bộ đám mây). Nhập xong cần tải lại trang. */
+export function exportRaw(): { raw: string; sig: string } { const raw = JSON.stringify(S); return { raw, sig: sig(raw) }; }
+export function verifyRaw(raw: string, sg: string): boolean { return sig(raw) === sg; }
+export function importRaw(raw: string): boolean {
+  try { JSON.parse(raw); localStorage.setItem(KEY, raw); localStorage.setItem(KEY + '_s', sig(raw)); return true; } catch { return false; }
+}
 export function resetSave() {
   try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + '_s'); localStorage.removeItem(KEY + '_bad'); } catch { /* ignore */ }
   S = newSave();

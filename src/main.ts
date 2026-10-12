@@ -23,6 +23,7 @@ import { Farm } from './core/farm';
 import { getSave } from './core/state';
 import { rollItem } from './data/items';
 import { installCursors } from './ui/cursor';
+import { startCloud } from './core/cloud';
 
 export const W = 1280;
 export const H = 720;
@@ -42,5 +43,12 @@ const game = new Phaser.Game({
 });
 
 installCursors(game.canvas);
+startCloud();
+// Trình duyệt nhúng (Facebook...) đổi kích thước khung khi cuộn/hiện thanh công cụ: ép Phaser tính lại tỉ lệ
+const refit = () => { try { game.scale.refresh(); } catch { /* ignore */ } };
+window.addEventListener('resize', refit);
+window.addEventListener('orientationchange', () => setTimeout(refit, 250));
+window.visualViewport?.addEventListener('resize', refit);
+document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false }); // chặn kéo-để-tải-lại / cuộn trang
 if (location.search.includes('debug')) (window as unknown as { __game: Phaser.Game }).__game = game;
 if (location.search.includes('debug')) (window as unknown as Record<string, unknown>).__dbg = { Farm, getSave, rollItem };
