@@ -7,9 +7,10 @@ const DEV = /[?&]dev=1/.test(location.search);
 function toast(t) { const d = document.createElement('div'); d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 3300); }
 
 /* ---------- icon helpers ---------- */
+const SHEETS = { items: [352, 832], rogues: [224, 224] };
 function ico(spec, size = 24) {
   if (spec.img) return `<img src="${spec.img}" width="${size}" height="${size}" style="object-fit:contain;flex:none">`;
-  const k = size / 32; return `<span class="ico px" style="width:${size}px;height:${size}px;background:url(assets/rg/${spec.sheet}.png) -${spec.c * 32 * k}px -${spec.r * 32 * k}px/${352 * k}px ${832 * k}px"></span>`;
+  const k = size / 32, [sw, sh] = SHEETS[spec.sheet]; return `<span class="ico px" style="width:${size}px;height:${size}px;background:url(assets/rg/${spec.sheet}.png) -${spec.c * 32 * k}px -${spec.r * 32 * k}px/${sw * k}px ${sh * k}px"></span>`;
 }
 const COIN = { img: 'assets/ts/Icon_03.png' };
 const TICKET = { sheet: 'items', c: 0, r: 21 };
@@ -23,28 +24,34 @@ const gemI = () => '<span class="gemi"></span>';
 const tag = r => `<span class="tag ${r}">${r}</span>`;
 
 /* ---------- Tab ---------- */
-const TABS = [['village', '🏘 Làng'], ['trade', '⚖ Thương mại'], ['gacha', '✨ Chiêu mộ'], ['team', '👥 Nhân sự'], ['gear', '🎒 Trang bị'],
-  ['journey', '🗺 Hành trình'], ['quest', '📜 Nhiệm vụ'], ['pass', '🎖 Sổ Hội'], ['rival', '🏆 Xếp hạng'], ['more', '⚙ Khác']];
-let tab = 'village';
-function setTab(t) { tab = t; lastMain = ''; render(); }
+const TABS = [
+  ['village', 'Công trình', { img: TS('House2') }, 'Công trình & Kho'], ['trade', 'Thương mại', { sheet: 'items', c: 2, r: 24 }, 'Thương mại'],
+  ['gacha', 'Chiêu mộ', { sheet: 'items', c: 0, r: 21 }, 'Chiêu mộ'], ['team', 'Nhân sự', { sheet: 'rogues', c: 0, r: 1 }, 'Nhân sự'],
+  ['gear', 'Trang bị', { sheet: 'items', c: 5, r: 12 }, 'Trang bị'], ['journey', 'Hành trình', { sheet: 'items', c: 6, r: 21 }, 'Hành Trình 7 Ngày'],
+  ['quest', 'Nhiệm vụ', { sheet: 'items', c: 1, r: 21 }, 'Nhiệm vụ & Điểm danh'], ['pass', 'Sổ Hội', { sheet: 'items', c: 0, r: 22 }, 'Sổ Thương Hội'],
+  ['rival', 'Xếp hạng', { sheet: 'items', c: 5, r: 17 }, 'Bảng Xếp Hạng'], ['more', 'Khác', { img: TS('Icon_10') }, 'Cài đặt'],
+];
+let tab = null;
+function setTab(t) { tab = (tab === t) ? null : t; lastMain = ''; render(); }
 
 /* ---------- Header ---------- */
 function renderRes() {
   const cap = capacity(), prod = g => { const b = BKEYS.find(b => BUILD[b].good === g); return prodOf(b); };
-  const chips = [`<div class="chip">${ico(COIN)}${fmt(S.gold)}<small>+${fmt1(goldRate())}/s</small></div>`];
-  for (const g of GOODS) { const full = S[g] >= cap * 0.98; chips.push(`<div class="chip ${full ? 'warn' : ''}" title="Kho ${fmt(S[g])}/${fmt(cap)}">${ico(GOOD[g].icon)}${fmt(S[g])}<small>${full ? 'ĐẦY' : '+' + fmt1(prod(g)) + '/s'}</small></div>`); }
-  chips.push(`<div class="chip">${gemI()}${fmt(S.gems)}<small>+${(gemRate() * 3600).toFixed(0)}/h</small></div>`);
-  chips.push(`<div class="chip">${ico(TICKET)}${S.tickets}<small>vé</small></div>`);
-  if (S.renown) chips.push(`<div class="chip" title="+5% sản lượng/điểm">🏅 ${S.renown}<small>+${S.renown * 5}%</small></div>`);
+  const chips = [`<div class="chip" style="min-width:120px">${ico(COIN)}${fmt(S.gold)}<small>+${fmt1(goldRate())}/s</small></div>`];
+  for (const g of GOODS) { const full = S[g] >= cap * 0.98; chips.push(`<div class="chip ${full ? 'warn' : ''}" style="min-width:84px" title="Kho ${fmt(S[g])}/${fmt(cap)}">${ico(GOOD[g].icon, 22)}${fmt(S[g])}<small>${full ? 'ĐẦY' : ''}</small></div>`); }
+  chips.push(`<div class="chip">${gemI()}${fmt(S.gems)}</div>`);
+  chips.push(`<div class="chip" style="min-width:60px">${ico(TICKET, 22)}${S.tickets}</div>`);
+  if (S.renown) chips.push(`<div class="chip" title="Danh Vọng">🏅 ${S.renown}</div>`);
   return chips.join('');
 }
+function renderGuild() { const need = guildXpNeed(S.guildLv); return `<div class="gpl" data-a="tab:journey"><img src="${TS('Castle')}"><div><b>Thương Hội Cấp ${S.guildLv}</b><div class="bar" style="width:104px"><i style="width:${S.guildXp / need * 100}%"></i></div></div></div>`; }
 function renderGolden() {
   const gi = goldenInfo();
-  return gi.active ? `<div class="gbar">🌟 GIỜ VÀNG! Giao hàng thủ công x1.5 · Ngọc x2 · Thương đoàn +20% — còn ${fmtT(gi.end)}</div>`
-    : `<div class="gbar idle">Giờ Vàng kế tiếp sau ${fmtT(gi.next)} (12:00 và 20:00) — giữ hàng trong kho để bán giá x1.5!</div>`;
+  return gi.active ? `<div class="gbar">🌟 GIỜ VÀNG! Giao hàng x1.5 · Ngọc x2 · còn ${fmtT(gi.end)}</div>`
+    : `<div class="gbar idle">Giờ Vàng kế tiếp sau ${fmtT(gi.next)} (12:00 · 20:00)</div>`;
 }
-function renderHint() { const h = nextHint(); return `<span>👉</span><div class="sp"><b>Gợi ý:</b> ${h.t}</div><button class="gold" data-a="tab:${h.tab}">Đi</button>`; }
-function renderNav() { const b = badges(); return TABS.map(([k, l]) => `<button class="${tab === k ? 'on' : ''} ${b[k] ? 'dot' : ''}" data-a="tab:${k}">${l}</button>`).join(''); }
+function renderHint() { const h = nextHint(); return `<span>👉</span><div class="sp"><b>Gợi ý:</b> ${h.t}</div><button class="gold" data-a="goto:${h.tab}">Đi</button>`; }
+function renderNav() { const b = badges(); return TABS.map(([k, l, ic]) => `<button class="dk ${tab === k ? 'on' : ''} ${b[k] ? 'dot' : ''}" data-a="tab:${k}"><span class="dki">${ico(ic, 32)}</span>${l}</button>`).join(''); }
 
 /* ---------- Panels ---------- */
 function heroOpts(slot) {
@@ -181,12 +188,16 @@ function pMore() {
 const PANELS = { village: pVillage, trade: pTrade, gacha: pGacha, team: pTeam, gear: pGear, journey: pJourney, quest: pQuest, pass: pPass, rival: pRival, more: pMore };
 
 /* ---------- Render ---------- */
-let lastMain = '', lastRes = '', lastNav = '', lastG = '', lastHint = '';
+let lastMain = '', lastRes = '', lastNav = '', lastG = '', lastHint = '', lastGuild = '';
 function render() {
   const set = (id, html, last) => { if (html !== last) $(id).innerHTML = html; return html; };
-  lastRes = set('#res', renderRes(), lastRes); lastG = set('#golden', renderGolden(), lastG); lastHint = set('#hint', renderHint(), lastHint); lastNav = set('#nav', renderNav(), lastNav);
+  lastRes = set('#res', renderRes(), lastRes); lastGuild = set('#guild', renderGuild(), lastGuild); lastG = set('#golden', renderGolden(), lastG); lastHint = set('#hint', renderHint(), lastHint); lastNav = set('#dock', renderNav(), lastNav);
+  $('#hint').classList.toggle('hidden', !!tab);
+  const win = $('#win'); if (!tab) { win.classList.add('hidden'); return; }
+  if (win.classList.contains('hidden')) { win.classList.remove('hidden'); lastMain = ''; }
+  $('#winTitle').textContent = TABS.find(t => t[0] === tab)[3];
   const ae = document.activeElement; if (ae && ae.tagName === 'SELECT') return;
-  const html = PANELS[tab](); if (html !== lastMain) { const m = $('#main'), sc = m.scrollTop; m.innerHTML = html; m.scrollTop = sc; lastMain = html; }
+  const html = PANELS[tab](); if (html !== lastMain) { const m = $('#winBody'), sc = m.scrollTop; m.innerHTML = html; m.scrollTop = sc; lastMain = html; }
 }
 
 /* ---------- Modal ---------- */
@@ -195,7 +206,7 @@ function openModal(html) { $('#modalInner').innerHTML = html; $('#modal').classL
 function closeModal() { $('#modal').classList.remove('show'); if (modalQueue.length) openModal(modalQueue.shift()); }
 function queueModal(html) { if ($('#modal').classList.contains('show')) modalQueue.push(html); else openModal(html); }
 function showPulls(res, type, n) {
-  if (res.some(r => r.r === 'SSR')) { const f = document.createElement('div'); f.className = 'flash'; document.body.appendChild(f); setTimeout(() => f.remove(), 950); }
+  if (res.some(r => r.r === 'SSR')) { const f = document.createElement('div'); f.className = 'flash'; $('#stage').appendChild(f); setTimeout(() => f.remove(), 950); }
   openModal(`<h2 style="color:var(--gold)">${type === 'hero' ? 'Kết quả chiêu mộ' : 'Kết quả mở rương'}</h2><div class="pulls">` + res.map((r, i) => `<div class="pull ${r.r}" style="animation-delay:${i * 0.13}s">${tag(r.r)}<div style="margin:6px 0">${r.kind === 'hero' ? heroImg(r.hero, 64) : gearImg(r.gear, 56)}</div><div class="nm">${r.n}</div><div class="mut">${r.isNew ? '<b class="up">MỚI!</b>' : r.kind === 'hero' ? `Trùng · ${r.star}★` : `Cấp ${r.star}`}</div></div>`).join('') +
     `</div><button class="gold" data-a="close">Đóng</button> <button class="blue" data-a="pull:${type}:${n}">Quay tiếp ×${n}</button>`);
   render();
@@ -216,6 +227,7 @@ function act(a) {
   const [n, x, y] = a.split(':'); const P = parseFloat;
   switch (n) {
     case 'tab': setTab(x); return;
+    case 'goto': tab = x; lastMain = ''; render(); return;
     case 'up': upgradeBuild(x); break; case 'upmax': upgradeMax(x); break; case 'fac': upgradeFac(x); break;
     case 'auto': S.auto = !S.auto; break; case 'sell': sellAll(); break;
     case 'car': sendCaravan(+x, P(y)); break; case 'col': collectCaravan(+x); break;
@@ -253,6 +265,11 @@ document.addEventListener('change', e => {
 });
 $('#btnLogin').onclick = () => openModal(loginHtml());
 $('#btnSet').onclick = () => setTab('more');
+$('#btnFs').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); };
+$('#winClose').onclick = () => setTab(tab);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#modal').classList.contains('show')) closeModal(); else if (tab) setTab(tab); } });
+function fit() { const k = Math.min(innerWidth / 1280, innerHeight / 720), st = $('#stage'); st.style.transform = `scale(${k})`; st.style.left = (innerWidth - 1280 * k) / 2 + 'px'; st.style.top = (innerHeight - 720 * k) / 2 + 'px'; }
+addEventListener('resize', fit); fit();
 $('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeModal(); });
 
 /* ---------- Khởi động ---------- */

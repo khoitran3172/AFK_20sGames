@@ -27,7 +27,7 @@ function sceneInit() {
   cv = document.getElementById('scene'); cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false;
   cv.addEventListener('click', e => {
     const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width, y = (e.clientY - r.top) * Hh / r.height;
-    const h = hot.slice().reverse().find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h); if (h) setTab(h.tab);
+    const h = hot.slice().reverse().find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h); if (h) { if (tab !== h.tab) setTab(h.tab); } else if (tab) setTab(tab);
   });
   cv.addEventListener('mousemove', e => {
     const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width, y = (e.clientY - r.top) * Hh / r.height;
@@ -126,7 +126,4 @@ function sceneDraw() {
     cx.fillStyle = 'rgba(255,200,60,0.12)'; cx.fillRect(0, 0, W, Hh);
     for (const s of sparkles) { s.y -= s.v * 0.016; if (s.y < -10) s.y = Hh + 10; cx.globalAlpha = 0.5 + 0.5 * Math.sin(sceneT * 3 + s.p); cx.fillStyle = '#ffe27a'; cx.fillRect(s.x, s.y, 3, 3); } cx.globalAlpha = 1;
   }
-  // thanh AFK
-  cx.fillStyle = '#d99a1c'; cx.beginPath(); cx.roundRect(W - 150, 8, 140, 28, 6); cx.fill();
-  cx.fillStyle = '#2a1b00'; cx.font = 'bold 15px Segoe UI'; cx.textAlign = 'center'; cx.fillText('AFK / AUTO ⚙', W - 80, 28); cx.textAlign = 'start';
 }
