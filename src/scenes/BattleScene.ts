@@ -208,6 +208,7 @@ export class BattleScene extends Phaser.Scene {
       const b = button(this, 1100, 650, 300, 62, t('back'), () => { Farm.startFarm(); this.scene.restart(); }, false, 26);
       b.c.setDepth(6000);
     }
+    iconButton(this, 1236, 188, 'icon4', () => this.scene.start('Village', { arena: getSave().farm }), false, 56).setDepth(6000);
     // nút bản đồ
     iconButton(this, 1236, 112, 'icon11', () => this.scene.start('World'), false, 56).setDepth(6000);
   }

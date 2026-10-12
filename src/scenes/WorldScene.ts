@@ -227,6 +227,7 @@ export class WorldScene extends Phaser.Scene {
     mk(56, 'icon1', t('skills'), () => this.scene.start('Skills'));
     mk(146, 'icon6', t('army'), () => this.scene.start('Army'));
     mk(236, 'icon10', t('settings'), () => this.scene.launch('Settings'));
+    mk(326, 'icon4', t('village'), () => this.scene.start('Village', { arena: getSave().farm }));
 
     // nút Chiến đấu lớn (góc dưới phải)
     const bb = this.add.container(1170, 606).setDepth(6000);
@@ -295,14 +296,16 @@ export class WorldScene extends Phaser.Scene {
     // nút
     const bY = H - 36;
     if (!locked) {
-      const farmBtn = button(this, -W / 2 + 150, bY, 232, 54, t('farm_here'), () => { Farm.setFarmArena(a.index); this.sel = a.index; this.buildMap(); this.buildInfo(); toast(this, `${t('farming')}: ${a.name}`, '#bfffc0'); }, false, 21);
+      const vb = button(this, -W / 2 + 96, bY, 156, 54, t('village'), () => this.scene.start('Village', { arena: a.index }), false, 21);
+      c.add(vb.c);
+      const farmBtn = button(this, -W / 2 + 280, bY, 196, 54, t('farm_here'), () => { Farm.setFarmArena(a.index); this.sel = a.index; this.buildMap(); this.buildInfo(); toast(this, `${t('farming')}: ${a.name}`, '#bfffc0'); }, false, 19);
       farmBtn.setEnabled(S.farm !== a.index);
       c.add(farmBtn.c);
       if (a.index === S.unlocked && a.index < TOTAL_ARENAS) {
-        const cb = button(this, W / 2 - 150, bY, 252, 54, t('challenge_boss'), () => {
+        const cb = button(this, W / 2 - 112, bY, 212, 54, t('challenge_boss'), () => {
           if (power(getSave()) < ARENAS[a.index].recPower) { toast(this, t('not_enough_power'), '#ff9a8a'); }
           Farm.setFarmArena(a.index); Farm.challenge(); this.scene.start('Battle');
-        }, true, 21);
+        }, true, 19);
         if (!ok) cb.c.setAlpha(0.8);
         c.add(cb.c);
       }

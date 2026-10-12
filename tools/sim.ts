@@ -3,6 +3,7 @@
 import { Battle } from '../src/core/battle';
 import { ARENAS, TOTAL_ARENAS } from '../src/data/arenas';
 import { SKILLS } from '../src/data/skills';
+import { MAX_SITE_LV, SITE_DEF, SITE_TYPES, lvOf, siteRate, upgradeCost, upgradeSite, villageRates } from '../src/core/village';
 import { canUnlock, evolveTroop, mcStats, newSave, nextSkillCost, power, statCost, unlockSkill, upgradeStat, Save, StatKey, has } from '../src/core/state';
 
 const MINCHUNK = Number(process.argv[2] ?? 30);
@@ -23,11 +24,29 @@ function spend(s: Save) {
   }
   // tiến hóa quân
   for (const id of s.squad) evolveTroop(s, id);
-  // chỉ số theo giá rẻ nhất
-  for (let i = 0; i < 400; i++) {
+  // làng (thời gian hoàn vốn ngắn) rồi tới chỉ số
+  for (let i = 0; i < 600; i++) {
+    let best: { a: number; t: (typeof SITE_TYPES)[number]; cost: number; pay: number } | null = null;
+    for (let a = Math.max(0, s.unlocked - 5); a <= Math.min(s.unlocked, TOTAL_ARENAS - 1); a++) for (const t of SITE_TYPES) {
+      const L = lvOf(s, a, t);
+      if (L >= MAX_SITE_LV) continue;
+      const cost = upgradeCost(a, L, t);
+      const before = siteRate(s, a, t);
+      if (!s.vil[a]) s.vil[a] = [0, 0, 0, 0];
+      s.vil[a][SITE_TYPES.indexOf(t)] = L + 1;
+      const after = siteRate(s, a, t);
+      s.vil[a][SITE_TYPES.indexOf(t)] = L;
+      const w = SITE_DEF[t].res === 'gold' ? 1 : SITE_DEF[t].res === 'stones' ? 25 : 300;
+      const pay = cost / Math.max(1e-9, (after - before) * w);
+      if (!best || pay < best.pay) best = { a, t, cost, pay };
+    }
     const keys: StatKey[] = ['hp', 'atk', 'def'];
-    keys.sort((a, b) => statCost(s, a) - statCost(s, b));
-    if (!upgradeStat(s, keys[0])) break;
+    keys.sort((x, y) => statCost(s, x) - statCost(s, y));
+    const stat = keys[0];
+    // chi tiêu xen kẽ: làng khi hoàn vốn < 40 phút, ngược lại (hoặc theo lượt chẵn) nâng chỉ số
+    const useVillage = !!best && best.pay < 2400 && i % 2 === 0;
+    if (useVillage && best) { if (!upgradeSite(s, best.a, best.t)) { if (!upgradeStat(s, stat)) break; } }
+    else if (!upgradeStat(s, stat)) { if (best && upgradeSite(s, best.a, best.t)) continue; break; }
   }
 }
 
@@ -39,7 +58,7 @@ s.squad = ['knight', 'archer', 'healer'];
 while (s.unlocked < TOTAL_ARENAS && t < 3600 * 400) {
   const A = ARENAS[s.unlocked];
   const r = measure(s, s.unlocked);
-  const CHUNK = Math.max(MINCHUNK, t * 0.02); s.gold += r.g * CHUNK; s.stones += r.st * CHUNK; s.badges += r.bd * CHUNK; t += CHUNK;
+  const CHUNK = Math.max(MINCHUNK, t * 0.02); const vr = villageRates(s); s.gold += (r.g + vr.gold) * CHUNK; s.stones += (r.st + vr.stones) * CHUNK; s.badges += (r.bd + vr.badges) * CHUNK; t += CHUNK;
   spend(s);
   const p = power(s);
   if (p >= A.recPower) {

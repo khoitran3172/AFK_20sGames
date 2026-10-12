@@ -3,6 +3,7 @@ import { ARENAS, TOTAL_ARENAS } from '../data/arenas';
 import { Battle } from './battle';
 import { Rates, Save, getSave, has, mods, power, save } from './state';
 import { t } from '../i18n';
+import { villageRates } from './village';
 
 export interface OfflineReport { seconds: number; gained: Rates; capped: boolean }
 
@@ -16,12 +17,16 @@ class FarmMgr {
   private win: { t: number; g: number; s: number; b: number }[] = [];
   private clock = 0;
   private rateTick = 0;
+  vRate: Rates = { gold: 0, stones: 0, badges: 0 };
+  bRate: Rates = { gold: 0, stones: 0, badges: 0 };
   listeners: (() => void)[] = [];
 
   get S(): Save { return getSave(); }
 
   init() {
     const S = this.S;
+    const vr0 = villageRates(S);
+    if (S.rate.gold <= 0 && S.rate.stones <= 0) S.rate = { ...vr0 };
     const away = (Date.now() - S.lastSeen) / 1000;
     if (away > 45 && (S.rate.gold > 0 || S.rate.stones > 0)) this.addOffline(away);
     this.startFarm();
@@ -85,7 +90,7 @@ class FarmMgr {
     const S = this.S;
     if (i < 0 || i > Math.min(S.unlocked, TOTAL_ARENAS - 1)) return;
     S.farm = i;
-    this.win = []; S.rate = { gold: 0, stones: 0, badges: 0 };
+    this.win = []; this.bRate = { gold: 0, stones: 0, badges: 0 };
     this.startFarm();
     save(true);
   }
@@ -131,6 +136,10 @@ class FarmMgr {
     this.battle.opts.events = this.viewing;
     if (!this.viewing) this.battle.events.length = 0;
     this.flush();
+    // làng: thu nhập liên tục (không bị ảnh hưởng bởi tốc độ x2/x3 của trận)
+    const vr = villageRates(S);
+    S.gold += vr.gold * dtSec; S.stones += vr.stones * dtSec; S.badges += vr.badges * dtSec;
+    this.vRate = vr;
 
     // đo tốc độ farm 60 giây gần nhất (dùng cho offline)
     this.rateTick += dtSec;
@@ -143,8 +152,9 @@ class FarmMgr {
         let g = 0, s = 0, b = 0;
         for (const w of this.win) { g += w.g; s += w.s; b += w.b; }
         const sp = S.speed || 1;
-        S.rate = { gold: g / span / sp, stones: s / span / sp, badges: b / span / sp };
+        this.bRate = { gold: g / span / sp, stones: s / span / sp, badges: b / span / sp };
       }
+      S.rate = { gold: this.bRate.gold + vr.gold, stones: this.bRate.stones + vr.stones, badges: this.bRate.badges + vr.badges };
     }
 
     if (this.battle.state === 'won' && this.mode === 'boss') this.finishBoss(true);
@@ -163,7 +173,7 @@ class FarmMgr {
         if (S.unlocked >= TOTAL_ARENAS) S.done = true;
         else S.farm = S.unlocked;
         if (has(S, 41)) this.grantHours(2);
-        S.rate = { gold: 0, stones: 0, badges: 0 };
+        this.bRate = { gold: 0, stones: 0, badges: 0 };
         this.win = [];
       }
     }

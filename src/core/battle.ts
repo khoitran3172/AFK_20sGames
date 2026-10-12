@@ -3,6 +3,8 @@ import { ARENAS, ArenaDef, MAPS, MOB_SPEC } from '../data/arenas';
 import { TIER_STAT_MUL, TROOPS, TroopId, activeSynergy } from '../data/troops';
 import { Save, has, mcStats, mods, troopCount } from './state';
 
+/** Drop từ trận đánh chỉ là phần phụ; làng mới là nguồn thu AFK chính. */
+export const BATTLE_DROP = 0.3;
 export const FIELD = { w: 1280, top: 345, bottom: 610 };
 
 export type Team = 0 | 1;
@@ -258,12 +260,12 @@ export class Battle {
     if (u.team === 1) {
       this.kills++;
       const A = this.arena;
-      let g = A.killGold * this.m.farmGold * (u.isBoss ? 0 : 1);
+      let g = A.killGold * this.m.farmGold * (u.isBoss ? 0 : 1) * BATTLE_DROP;
       if (!u.isBoss && has(S, 42) && Math.random() < 0.05) { g *= 5; this.txt(u.x, u.y - 100, 'x5 GOLD!', 0xffd34d, true); this.fx('fxExplosion', u.x, u.y - 30, 0.8); }
       if (u.elite) g *= 3;
-      let st = A.killStone * this.m.farmStone * (u.elite ? 2.5 : 1);
+      let st = A.killStone * this.m.farmStone * (u.elite ? 2.5 : 1) * BATTLE_DROP;
       this.rewards.gold += g; this.rewards.stones += st;
-      if (Math.random() < A.killBadge * this.m.badgeBonus * (u.elite ? 4 : 1)) { this.rewards.badges += 1; this.txt(u.x, u.y - 100, '+1 ' + (this.opts.lang ? this.opts.lang('badges') : 'Badge'), 0xb9e6ff, true); }
+      if (Math.random() < A.killBadge * this.m.badgeBonus * (u.elite ? 4 : 1) * BATTLE_DROP) { this.rewards.badges += 1; this.txt(u.x, u.y - 100, '+1 ' + (this.opts.lang ? this.opts.lang('badges') : 'Badge'), 0xb9e6ff, true); }
       if (u.isBoss) { this.bossAlive = false; this.fx('fxExplosion2', u.x, u.y - 40, 3.2); this.events.length < 400 && this.opts.events && this.events.push({ k: 'shake', a: 10 }); }
       if (has(S, 36)) {
         const near = this.foes(0).filter((e) => e !== u).sort((a, b) => dist(a, u) - dist(b, u)).slice(0, 2);

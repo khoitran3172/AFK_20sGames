@@ -21,6 +21,7 @@ export interface Save {
   rate: Rates; // tốc độ farm đo được (đơn vị / giây) — dùng cho offline
   chest: Rates; // hòm AFK đang chờ nhận
   chestMs: number; // thời gian đã tích lũy (ms)
+  vil: Record<number, number[]>; // cấp 4 công trình của làng mỗi Arena
   kills: number;
   playMs: number;
   speed: number;
@@ -36,7 +37,7 @@ export const STAT_COST_GROWTH = 1.118;
 
 export function newSave(): Save {
   return {
-    v: 2, gold: 40, stones: 0, badges: 0,
+    v: 2, gold: 150, stones: 0, badges: 0,
     lv: { hp: 0, atk: 0, def: 0 },
     skills: [1],
     squad: ['knight', 'archer', 'healer'],
@@ -44,7 +45,7 @@ export function newSave(): Save {
     unlocked: 0, farm: 0, lastSeen: Date.now(),
     rate: { gold: 0, stones: 0, badges: 0 },
     chest: { gold: 0, stones: 0, badges: 0 }, chestMs: 0,
-    kills: 0, playMs: 0, speed: 1, done: false,
+    vil: {}, kills: 0, playMs: 0, speed: 1, done: false,
   };
 }
 

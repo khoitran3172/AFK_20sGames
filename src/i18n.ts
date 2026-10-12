@@ -62,6 +62,9 @@ const VI: Dict = {
   hold_to_view: 'Chạm để xem', buy: 'Mua', owned: 'Đang dùng', swap: 'Đổi',
   tab_stats: 'Chỉ số', tab_troops: 'Quân đội',
   days: 'ngày', ready: 'Sẵn sàng', farm_eff: 'Hiệu suất farm',
+  village: 'Làng', site_farm: 'Trang Trại', site_lumber: 'Xưởng Gỗ', site_crystal: 'Mỏ Tinh Thạch', site_forge: 'Lò Rèn',
+  build: 'Xây dựng', village_income: 'Thu nhập làng', all_villages: 'Tất cả làng', per_sec: '/giây', buy_gold: 'Không đủ Vàng',
+  village_hint: 'Dân làng sản xuất liên tục kể cả khi bạn offline.',
 };
 
 const EN: Dict = {
@@ -101,6 +104,9 @@ const EN: Dict = {
   hold_to_view: 'Tap to view', buy: 'Buy', owned: 'In use', swap: 'Swap',
   tab_stats: 'Stats', tab_troops: 'Army',
   days: 'days', ready: 'Ready', farm_eff: 'Farm efficiency',
+  village: 'Village', site_farm: 'Farm', site_lumber: 'Lumber Camp', site_crystal: 'Crystal Mine', site_forge: 'Forge',
+  build: 'Build', village_income: 'Village income', all_villages: 'All villages', per_sec: '/s', buy_gold: 'Not enough Gold',
+  village_hint: 'Villagers keep producing even while you are offline.',
 };
 
 /** Tên + mô tả tiếng Anh cho 46 kỹ năng, theo id. */

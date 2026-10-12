@@ -92,7 +92,24 @@ function zerie(who: 'Soldier' | 'Orc', id: string, scale: number, atk3: boolean)
   return { id, scale, ox: 0.5, oy: 0.56, faceRight: true, shadow: 46, anims };
 }
 
+function pawnJob(id: string, tool: string, load: string, act: string, actFrames: number): SpriteSet {
+  const f = (n: string) => ts('Blue', 'Pawn', n);
+  return {
+    id, scale: 0.8, ox: 0.5, oy: 0.62, faceRight: true, shadow: 46,
+    anims: {
+      idle: A(f('Pawn_Idle_' + tool), 192, 192, 8, 8, true),
+      walk: A(f('Pawn_Run_' + load), 192, 192, 6, 12, true),
+      back: A(f('Pawn_Run_' + tool), 192, 192, 6, 12, true),
+      attack: A(f(act), 192, 192, actFrames, 10, true),
+    },
+  };
+}
 export const SPRITE_SETS: SpriteSet[] = [
+  // --- dân làng ---
+  pawnJob('pv_farm', 'Knife', 'Meat', 'Pawn_Interact_Knife', 4),
+  pawnJob('pv_lumber', 'Axe', 'Wood', 'Pawn_Interact_Axe', 6),
+  pawnJob('pv_crystal', 'Pickaxe', 'Gold', 'Pawn_Interact_Pickaxe', 6),
+  pawnJob('pv_forge', 'Hammer', 'Hammer', 'Pawn_Interact_Hammer', 3),
   // --- phe ta ---
   zerie('Soldier', 'mc', 3.6, true),
   warrior('Blue', 'knight', 0.95),

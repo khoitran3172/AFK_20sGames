@@ -17,6 +17,14 @@ và **3 đạo quân hỗ trợ** (tiến hóa bằng Huy Hiệu). Trận đánh
 | Đá Tinh Thạch | quái rơi (nhiều hơn khi Boss/Elite) | mở node cây kỹ năng (giá tăng 20%/node đã mở, node 38 giảm 15%) |
 | Huy Hiệu Chiến Trận | rơi hiếm (node 45 +15%) | tiến hóa bậc quân (Tân Binh → Dày Dạn → Hoàng Gia) |
 
+## 3b. Làng của mỗi Arena (nguồn thu AFK chính)
+* Mỗi Arena có một **cảnh làng riêng** (48 bố cục sinh theo seed: hình đất, hồ, vị trí lâu đài và 4 công trình, trang trí; màu cỏ/trang trí đổi theo bản đồ).
+* 4 công trình: **Trang Trại** & **Xưởng Gỗ** → Vàng, **Mỏ Tinh Thạch** → Đá Tinh Thạch, **Lò Rèn** → Huy Hiệu. Mỗi công trình tối đa cấp 20, nâng bằng Vàng.
+* Dân làng (Pawn) làm việc, vác hàng về lâu đài, chữ `+` bay như làng cũ; số dân tăng theo cấp.
+* **Làng của mọi Arena đã mở đều sản xuất song song** (tỉ lệ theo hệ số Arena) nên cả game là một "đế chế" cộng dồn; mở Arena mới = thêm làng mới.
+* Drop từ trận đánh giảm còn 30% (`BATTLE_DROP`), phần còn lại do làng đảm nhiệm; Boss thưởng nguyên vẹn.
+* Offline: Hòm AFK dùng (tốc độ trận đo được + tổng sản lượng làng) × thời gian vắng × 0.85.
+
 ## 4. AFK / Offline hợp lý
 * Trận farm **luôn chạy nền** ở mọi màn hình (menu, bản đồ, kỹ năng...), nhận drop thực từ từng quái.
 * Hệ thống đo tốc độ farm 90 giây gần nhất. Khi thoát, lần vào lại tính **Hòm AFK = tốc độ đo được × thời gian vắng × 0.85**, tối đa 8h (node 37 → 12h; node 46 +25%).
@@ -36,7 +44,7 @@ Knight 7, Pikeman 6, Archer 5, Wizard 3, Healer 2, Rogue 3. Chọn đúng 3.
 (`src/core/battle.ts`) và chỉ số (`src/core/state.ts: mods`). Dữ liệu và bản dịch EN ở `src/data/skills.ts`, `src/i18n.ts`.
 
 ## 7. Cân bằng (tools/sim.ts)
-Người chơi tham lam tối ưu hoàn thành 48 Arena trong ≈ 24 giờ chơi tích cực (Map 1 ≈ 20 phút, mỗi bản đồ dài dần). Người chơi thật chậm hơn nhiều.
+Người chơi tham lam tối ưu (chi xen kẽ làng/chỉ số) hoàn thành 48 Arena trong ≈ 35 giờ chơi tích cực (Map 1 ≈ 20 phút, mỗi bản đồ dài dần). Người chơi thật chậm hơn nhiều.
 Chỉnh `REC_K`, `STAT_COST_GROWTH`, `LV_GROWTH`, `killGold` và chạy lại `npm run sim`.
 
 ## 8. Đồ họa, VFX, ngôn ngữ

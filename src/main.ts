@@ -12,6 +12,7 @@ import { SkillScene } from './scenes/SkillScene';
 import { ArmyScene } from './scenes/ArmyScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { ResultScene } from './scenes/ResultScene';
+import { VillageScene } from './scenes/VillageScene';
 import { Farm } from './core/farm';
 import { getSave } from './core/state';
 
@@ -27,7 +28,7 @@ const game = new Phaser.Game({
   pixelArt: true,
   roundPixels: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [BootScene, WorldScene, BattleScene, SkillScene, ArmyScene, SettingsScene, ResultScene],
+  scene: [BootScene, WorldScene, VillageScene, BattleScene, SkillScene, ArmyScene, SettingsScene, ResultScene],
   input: { activePointers: 2 },
   fps: { forceSetTimeOut: location.search.includes('debug') },
 });
