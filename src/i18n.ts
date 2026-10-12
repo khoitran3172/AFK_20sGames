@@ -1,4 +1,5 @@
-// Hai ngôn ngữ: vi / en. Font: VI -> VT323 (đủ dấu tiếng Việt), EN -> Pixelify Sans.
+// Hai ngôn ngữ: vi / en. Font: VI -> Baloo 2 (dễ đọc, đủ dấu tiếng Việt), EN -> Pixelify Sans.
+import { TROOP_SPECIAL, TroopId } from './data/troops';
 export type Lang = 'vi' | 'en';
 
 let lang: Lang = 'vi';
@@ -16,11 +17,11 @@ export function setLang(l: Lang) {
 
 /** Họ font theo ngôn ngữ (luôn có fallback có hỗ trợ tiếng Việt). */
 export function fontFamily(): string {
-  return lang === 'vi' ? '"VT323", monospace' : '"Pixelify Sans", "VT323", monospace';
+  return lang === 'vi' ? '"Baloo 2", "VT323", sans-serif' : '"Pixelify Sans", "VT323", monospace';
 }
-/** VT323 nhỏ hơn Pixelify ~ 1.35 lần với cùng cỡ chữ */
+/** Baloo 2 nhỏ hơn Pixelify chút ít với cùng cỡ chữ */
 export function fs(px: number): string {
-  return Math.round(lang === 'vi' ? px * 1.3 : px) + 'px';
+  return Math.round(lang === 'vi' ? px * 1.02 : px) + 'px';
 }
 
 type Dict = Record<string, string>;
@@ -60,6 +61,7 @@ const VI: Dict = {
   invuln: 'Bất tử!', shield: 'Khiên!', rage: 'Cuồng Nộ',
   reward: 'Phần thưởng', first_clear: 'Lần đầu vượt ải', boss_hp: 'Máu Boss', mc_down: 'Thủ Lĩnh ngã rồi, đang hồi sức...',
   hold_to_view: 'Chạm vô coi', buy: 'Mua', owned: 'Đang xài', swap: 'Đổi',
+  troop_locked: 'Chưa chiêu mộ', troop_locked_via: 'Mở node Cây kỹ năng:', go_skills: 'Tới Cây kỹ năng', troop_unlock_hint: 'Mở khóa binh chủng {n} — coi bên tab Quân đội nha.',
   tab_stats: 'Chỉ số', tab_troops: 'Quân đội',
   days: 'ngày', ready: 'Sẵn sàng', farm_eff: 'Hiệu suất farm',
   village: 'Làng', site_farm: 'Trang Trại', site_lumber: 'Xưởng Gỗ', site_crystal: 'Mỏ Tinh Thạch', site_forge: 'Lò Rèn',
@@ -75,7 +77,7 @@ const VI: Dict = {
   q_chests: 'Lãnh Hòm AFK {n} lần', q_minutes: 'Chơi {n} phút', q_items: 'Kiếm {n} món trang bị',
   tree: 'Cây', tree_title: 'Cây nâng quân', tf_hp: 'Máu', tf_atk: 'Công', tf_def: 'Giáp', tf_aspd: 'Tốc đánh', tf_crit: 'Chí mạng', tf_heal: 'Hồi máu', tf_spirit: 'Sức Linh Hồn',
   tower: 'Tháp Vô Tận', tower_short: 'Tháp', floor: 'Tầng', best_floor: 'Kỷ lục', tries_left: 'Còn {n} lượt hôm nay', climb: 'Leo tháp nè', tower_end: 'Dừng leo', new_best: 'Kỷ lục mới!',
-  tower_hint: 'Leo càng cao thưởng càng ngon lành. Chết là hết lượt luôn, nên ráng tính cho kỹ nha.', tower_boss_hint: 'Cứ 10 tầng là gặp Boss, đánh thắng sẽ rớt trang bị Hiếm trở lên.',
+  tower_hint: 'Leo càng cao thưởng càng ngon lành. Chết là hết lượt luôn, nên ráng tính cho kỹ nha.', tower_mul: 'Quái tầng kế mạnh x{a} (5 tầng nữa: x{b}) so với Arena 1 — độ khó cố định, hổng đổi theo Arena.', tower_boss_hint: 'Cứ 10 tầng là gặp Boss, đánh thắng sẽ rớt trang bị Hiếm trở lên.',
   floors_cleared: 'Vượt được {n} tầng', no_tries: 'Hết lượt hôm nay rồi, mai leo tiếp nha',
   enhance: 'Cường hóa', enhance_max: 'Tối đa', enhance_need: 'Hổng đủ Đá hoặc Vàng để cường hóa',
   help_gold_t: 'Vàng', help_gold: 'Xài để nâng chỉ số Thủ Lĩnh, xây và nâng cấp công trình trong làng, tiến hóa quân, cường hóa trang bị. Kiếm từ làng, quái rớt, Boss và nhiệm vụ.',
@@ -139,6 +141,7 @@ const EN: Dict = {
   invuln: 'Invulnerable!', shield: 'Shield!', rage: 'Fury',
   reward: 'Rewards', first_clear: 'First clear', boss_hp: 'Boss HP', mc_down: 'Chieftain fell — recovering...',
   hold_to_view: 'Tap to view', buy: 'Buy', owned: 'In use', swap: 'Swap',
+  troop_locked: 'Not recruited', troop_locked_via: 'Unlock the Skill Tree node:', go_skills: 'Open Skill Tree', troop_unlock_hint: 'Unlocks the {n} troop type — pick it in the Army tab.',
   tab_stats: 'Stats', tab_troops: 'Army',
   days: 'days', ready: 'Ready', farm_eff: 'Farm efficiency',
   village: 'Village', site_farm: 'Farm', site_lumber: 'Lumber Camp', site_crystal: 'Crystal Mine', site_forge: 'Forge',
@@ -154,7 +157,7 @@ const EN: Dict = {
   q_chests: 'Collect the AFK Chest {n} time(s)', q_minutes: 'Play for {n} minutes', q_items: 'Obtain {n} gear item(s)',
   tree: 'Tree', tree_title: 'Troop upgrade tree', tf_hp: 'HP', tf_atk: 'ATK', tf_def: 'DEF', tf_aspd: 'Atk Speed', tf_crit: 'Crit', tf_heal: 'Healing', tf_spirit: 'Spirit power',
   tower: 'Endless Tower', tower_short: 'Tower', floor: 'Floor', best_floor: 'Best', tries_left: '{n} climbs left today', climb: 'Climb', tower_end: 'Stop climbing', new_best: 'New record!',
-  tower_hint: 'The higher you climb the better the loot. Dying ends the run, so plan carefully.', tower_boss_hint: 'A Boss waits every 10 floors and drops Rare+ gear.',
+  tower_hint: 'The higher you climb the better the loot. Dying ends the run, so plan carefully.', tower_mul: 'Next-floor monsters are x{a} (x{b} in 5 floors) of Arena 1 stats — a fixed difficulty that never scales with Arena.', tower_boss_hint: 'A Boss waits every 10 floors and drops Rare+ gear.',
   floors_cleared: 'Cleared {n} floors', no_tries: 'No climbs left today — come back tomorrow',
   enhance: 'Enhance', enhance_max: 'Max', enhance_need: 'Not enough Stones or Gold to enhance',
   help_gold_t: 'Gold', help_gold: 'Spend on Chieftain stats, building and upgrading village sites, evolving troops and enhancing gear. Earned from villages, monster drops, Bosses and quests.',
@@ -217,6 +220,24 @@ const SKILL_EN: Record<number, [string, string]> = {
   43: ['Hex of Weakness', 'Bosses lose 25% attack and armor.'],
   44: ['Energy Flow', 'Wizard spells have no cast time.'],
   45: ['Lucky Chest', '+15% chance for rare materials (Badges) while farming.'],
+  47: ['Recruit: Pikemen', 'UNLOCKS Pikeman troops: a second frontline that pierces 2 targets.'],
+  48: ['Recruit: Spear Hunters', 'UNLOCKS Spear Hunters: mid-line troops whose spears pierce many foes.'],
+  49: ['Recruit: Paladins', 'UNLOCKS Paladins: support frontline with a healing aura for the squad.'],
+  50: ['War Drums', 'Every 20s, war drums give the whole army +30% attack speed for 6s.'],
+  51: ['Reserve Supplies', 'Fallen troops respawn twice as fast and return with a Shield worth 35% HP.'],
+  52: ['Elite Conscription', '+1 troop count for EVERY troop type on the field.'],
+  53: ['All-Out Assault', 'Every 25s: all fallen troops rise instantly and the army gains +40% attack for 8s.'],
+  54: ['Recruit: Rogues', 'UNLOCKS Shadow Rogues: stealth, blink behind the enemy line and assassinate ranged foes.'],
+  55: ['Bloodlust', 'Each kill heals the Chieftain for 3% max HP.'],
+  56: ['Blade Storm', 'Every 6 hits the Chieftain spins, slashing all nearby foes for 2x attack.'],
+  57: ['Phoenix Rebirth', 'Once per battle: a lethal hit revives you at 50% HP with 2s of invulnerability.'],
+  58: ['Unbroken Will', 'Each hit shaves 0.8s off War Cry cooldown; War Cry stuns foes for 1.5s.'],
+  59: ['Recruit: Wizards', 'UNLOCKS Elemental Wizards: channel for 1s, then hurl fire/frost into the biggest crowd.'],
+  60: ['Recruit: Summoners', 'UNLOCKS Summoners: every 7s they call 2 Spirits to fight for you.'],
+  61: ['Eternal Treasury', 'AFK chest stores up to 24 hours; villages produce 20% more Gold.'],
+  62: ['Treasure Hunter', 'Equipment drop rate x2; every Boss kill drops one extra item.'],
+  63: ['Glacial Blizzard', 'Every 14s a blizzard freezes all normal monsters for 2s (Bosses are slowed).'],
+  64: ['Doom Meteor', 'Every 16s a meteor deals 3x Chieftain attack to all foes and sets them ablaze.'],
   46: ['Void Rift', 'Summon a Black Hole at battle start that pulls monsters and deals magic damage; +25% AFK yield permanently.'],
 };
 
@@ -225,6 +246,11 @@ export function t(key: string, p?: Record<string, string | number>): string {
   let s = d[key] ?? VI[key] ?? key;
   if (p) for (const k of Object.keys(p)) s = s.replace(`{${k}}`, String(p[k]));
   return s;
+}
+
+export function specialText(id: string): [string, string] {
+  const sp = TROOP_SPECIAL[id as TroopId];
+  return lang === 'vi' ? sp.vi : sp.en;
 }
 
 export function skillName(id: number, viName: string): string {

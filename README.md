@@ -1,7 +1,7 @@
 # Chronicle of the Chieftain / Biên Niên Thủ Lĩnh
 
 Idle / AFK RPG 2D pixel-art (Phaser 3 + TypeScript + Vite). 1 Thủ Lĩnh (Main Character) + 3 đạo quân, 4 bản đồ × 12 Arena,
-cây kỹ năng 46 node. Hai ngôn ngữ: Tiếng Việt (font VT323) và English (font Pixelify Sans).
+cây kỹ năng 46 node. Hai ngôn ngữ: Tiếng Việt (font Baloo 2) và English (font Pixelify Sans).
 
 ```bash
 npm install
@@ -19,5 +19,5 @@ Thiết kế chi tiết: [docs/DESIGN.md](docs/DESIGN.md). Bản cũ (idle thư�
 * **Super Pixel Effects Gigapack (bản Free)** — Will Tice / unTied Games: VFX.
 * **Anvil's RPG icons** — Ponk (CC BY 4.0): icon trang bị. **Achievement Icon Pack** — GTORAVERSE: icon thành tựu/rương.
 * **Evil Wizard 3, Hero Knight, Huntress, Martial Hero 3, Medieval King Pack 2** — LuizMelo (CC0): binh chủng mới và nhân vật sự kiện.
-* Fonts: VT323, Pixelify Sans (SIL OFL, qua @fontsource).
+* Fonts: Baloo 2, VT323, Pixelify Sans (SIL OFL, qua @fontsource).
 Không phát tán lại bộ asset gốc; không dùng cho huấn luyện AI/NFT.

@@ -162,7 +162,14 @@ export class ItemsScene extends Phaser.Scene {
     c.add(b1.c);
     // cường hóa: chỗ tiêu Đá + Vàng không giới hạn
     const ec = enhanceCost(S, it);
-    if (ec) c.add(T(this, 225, 646, `💎 ${fmt(ec.stones)}   🪙 ${fmt(ec.gold)}`, 15, { origin: [0.5, 0.5], color: S.stones >= ec.stones && S.gold >= ec.gold ? '#1f5f9a' : '#b02a1a', stroke: '#fff3cc', sw: 0 }));
+    if (ec) {
+      const ok = S.stones >= ec.stones && S.gold >= ec.gold;
+      const col = ok ? '#1f5f9a' : '#b02a1a';
+      c.add(this.add.image(110, 646, 'stoneIcon').setDisplaySize(30, 30));
+      c.add(T(this, 134, 646, fmt(ec.stones), 17, { origin: [0, 0.5], color: col, stroke: '#fff3cc', sw: 0 }));
+      c.add(this.add.image(260, 646, 'icon3').setDisplaySize(24, 24));
+      c.add(T(this, 277, 646, fmt(ec.gold), 17, { origin: [0, 0.5], color: col, stroke: '#fff3cc', sw: 0 }));
+    }
     const eb = button(this, 225, 686, 136, 40, ec ? `${t('enhance')} +${(it.plus ?? 0) + 1}` : t('enhance_max'), () => {
       const s = getSave();
       if (enhanceItem(s, it)) { Farm.refresh(); save(true); toast(this, `${itemName(it)} +${it.plus}`, '#ffe14a'); this.build(); }

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Farm } from '../core/farm';
-import { getSave } from '../core/state';
+import { towerMul, towerRec } from '../core/battle';
+import { fmt, getSave, power } from '../core/state';
 import { TOWER_TRIES, ensureTower, nextBossFloor, triesLeft } from '../core/tower';
 import { Hud } from '../ui/hud';
 import { achvIcon, button, iconButton, panel, T, toast } from '../ui/kit';
@@ -38,6 +39,9 @@ export class TowerScene extends Phaser.Scene {
     T(this, px + 290, py + 20, t('tower'), 40, { origin: [0.5, 0], color: '#3b2a14', stroke: '#fff3cc', sw: 0 });
     T(this, px + 30, py + 90, t('tower_hint'), 20, { color: '#4a3a20', stroke: '#fff3cc', sw: 0, wrap: 520, ls: 3 });
     T(this, px + 30, py + 190, t('tower_boss_hint'), 19, { color: '#6b4a20', stroke: '#fff3cc', sw: 0, wrap: 520, ls: 3 });
+    T(this, px + 30, py + 230, t('tower_mul', { a: (towerMul(tw.best + 1)).toFixed(1), b: (towerMul(tw.best + 6)).toFixed(1) }), 19, { color: '#1f5f9a', stroke: '#fff3cc', sw: 0, wrap: 520 });
+    const nf = tw.best + 1, rec = towerRec(nf), pw = power(S);
+    T(this, px + 30, py + 340, `${t('floor')} ${nf}: ${t('power')} ${fmt(pw)} / ${t('rec_power')} ${fmt(rec)}`, 19, { color: pw >= rec ? '#1f7a2a' : '#b02a1a', stroke: '#fff3cc', sw: 0 });
     const left = triesLeft(S);
     T(this, px + 30, py + 270, t('tries_left', { n: left }), 24, { color: left > 0 ? '#1f7a2a' : '#b02a1a', stroke: '#fff3cc', sw: 0 });
     for (let i = 0; i < TOWER_TRIES; i++) achvIcon(this, px + 450 + i * 40, py + 284, i < left ? 'Gold-Star' : 'Silver-Star', 34).setAlpha(i < left ? 1 : 0.4);

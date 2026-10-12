@@ -255,7 +255,7 @@ export class WorldScene extends Phaser.Scene {
     // Hòm AFK
     const ch = this.add.container(16, 96).setDepth(6000);
     ch.add(panel(this, 0, 0, 236, 74, false, 0.4));
-    const icn = this.add.image(36, 38, 'goldRes').setDisplaySize(52, 52);
+    const icn = this.add.image(36, 38, 'stoneIcon').setDisplaySize(52, 52);
     this.chestTxt = T(this, 70, 8, '', 19, { color: '#3b2a14', stroke: '#fff3cc', sw: 0 });
     this.chestBar = this.add.graphics();
     ch.add([icn, this.chestTxt, this.chestBar]);

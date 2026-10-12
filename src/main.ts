@@ -1,6 +1,9 @@
 import '@fontsource/vt323/latin-400.css';
 import '@fontsource/vt323/latin-ext-400.css';
 import '@fontsource/vt323/vietnamese-400.css';
+import '@fontsource/baloo-2/latin-600.css';
+import '@fontsource/baloo-2/latin-ext-600.css';
+import '@fontsource/baloo-2/vietnamese-600.css';
 import '@fontsource/pixelify-sans/latin-400.css';
 import '@fontsource/pixelify-sans/latin-ext-400.css';
 import '@fontsource/pixelify-sans/latin-700.css';

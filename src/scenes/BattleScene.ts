@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ARENAS, MAPS } from '../data/arenas';
 import { SET_BY_ID } from '../data/sprites';
 import { TROOPS, TroopId, activeSynergy } from '../data/troops';
-import { Battle, Proj, Unit, FIELD } from '../core/battle';
+import { Battle, Proj, Unit, FIELD, towerRec } from '../core/battle';
 import { Farm } from '../core/farm';
 import { fmt, getSave, power, troopCount, save } from '../core/state';
 import { Hud } from '../ui/hud';
@@ -382,8 +382,9 @@ export class BattleScene extends Phaser.Scene {
     this.mcLabel.setText(`${t('mc_hero')}  ${fmt(b.mc.hp)}/${fmt(b.mc.maxHp)}`);
     this.mcLabel.setPosition(66, 90);
     const p = power(S);
-    this.powTxt.setText(`${t('power')} ${fmt(p)} / ${t('rec_power')} ${fmt(A.recPower)}`);
-    this.powTxt.setColor(p >= A.recPower ? '#aef0b0' : '#ffb0a0');
+    const rec = Farm.mode === 'tower' ? towerRec(Math.max(1, b.wave)) : A.recPower;
+    this.powTxt.setText(`${t('power')} ${fmt(p)} / ${t('rec_power')} ${fmt(rec)}`);
+    this.powTxt.setColor(p >= rec ? '#aef0b0' : '#ffb0a0');
     // quân số
     S.squad.forEach((id: TroopId, i: number) => {
       const total = troopCount(S, id);

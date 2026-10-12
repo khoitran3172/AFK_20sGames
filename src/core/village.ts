@@ -9,7 +9,7 @@ export const MAX_SITE_LV = 20;
 export const SITE_DEF: Record<SiteType, { res: keyof Rates; base: number; cost: number; name: string; icon: string }> = {
   farm: { res: 'gold', base: 0.05, cost: 30, name: 'site_farm', icon: 'icon4' },
   lumber: { res: 'gold', base: 0.05, cost: 35, name: 'site_lumber', icon: 'icon2' },
-  crystal: { res: 'stones', base: 0.0058, cost: 50, name: 'site_crystal', icon: 'goldRes' },
+  crystal: { res: 'stones', base: 0.0058, cost: 50, name: 'site_crystal', icon: 'stoneIcon' },
   forge: { res: 'badges', base: 0.00006, cost: 70, name: 'site_forge', icon: 'icon6' },
 };
 
@@ -26,7 +26,7 @@ export function siteRate(S: Save, arena: number, t: SiteType): number {
   // Huy Hiệu là tiền HIẾM: sản lượng Lò Rèn KHÔNG tăng theo hệ số Arena (giá nâng quân là số cố định)
   let r = d.base * (t === 'forge' ? 1 : ARENAS[arena].scale) * lvMult(L);
   const eb = equipBonus(S);
-  if (t === 'farm' || t === 'lumber') r *= (has(S, 32) ? 1.1 : 1) * (1 + eb.gold);
+  if (t === 'farm' || t === 'lumber') r *= (has(S, 32) ? 1.1 : 1) * (has(S, 61) ? 1.2 : 1) * (1 + eb.gold);
   if (t === 'crystal') r *= (has(S, 33) ? 1.1 : 1) * (1 + eb.stone);
   if (t === 'forge') r *= has(S, 45) ? 1.15 : 1;
   if (has(S, 46)) r *= 1.25;

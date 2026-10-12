@@ -129,6 +129,20 @@ export const TROOP_TREE: Record<TroopId, TreeFx[]> = {
   huntress: [{ crit: 0.12 }, { atk: 0.25 }, { count: 1 }, { atk: 0.35, aspd: 0.15 }],
   summoner: [{ atk: 0.3 }, { hp: 0.3 }, { count: 1 }, { spirit: 0.6, atk: 0.3 }],
 };
+/** Node IV của mỗi cây quân mở một CƠ CHẾ riêng (không chỉ cộng %) */
+export const TROOP_SPECIAL: Record<TroopId, { vi: [string, string]; en: [string, string] }> = {
+  knight: { vi: ['Tường Thép', 'Khiên Phản Chấn giảm 60% sát thương mặt trước và kéo dài 5 giây.'], en: ['Iron Wall', 'Rebound Shield blocks 60% frontal damage and lasts 5s.'] },
+  pike: { vi: ['Mũi Thương Xuyên Giáp', 'Đòn đâm bỏ qua 40% Giáp của địch.'], en: ['Armor-Piercing Tip', 'Thrusts ignore 40% of enemy armor.'] },
+  archer: { vi: ['Mưa Tên', 'Mỗi mũi thứ 6, Xạ Thủ bắn thêm 3 mũi tên vô 3 quái ngẫu nhiên.'], en: ['Arrow Rain', 'Every 6th shot fires 3 extra arrows at random foes.'] },
+  wizard: { vi: ['Thiên Thạch Nguyên Tố', 'Vùng nổ +50%; cứ 4 phép có 1 phép Thiên Thạch gấp 2.5 lần sát thương.'], en: ['Elemental Meteor', 'Blast radius +50%; every 4th spell is a Meteor for 2.5x damage.'] },
+  healer: { vi: ['Ân Điển Sống Lại', 'Mỗi 20 giây, 1 lính vừa ngã được hồi sinh sau 1.5 giây.'], en: ['Grace of Rebirth', 'Every 20s, a fallen soldier revives after only 1.5s.'] },
+  rogue: { vi: ['Đoạt Mạng', 'Hạ gục quái là hồi chiêu dịch chuyển và tàng hình 1.5 giây.'], en: ['Execute', 'Each kill resets the blink cooldown and grants 1.5s of stealth.'] },
+  paladin: { vi: ['Thánh Quang Bất Diệt', 'Mỗi 15 giây, Paladin ban Khiên bằng 20% máu cho đồng minh xung quanh.'], en: ['Undying Radiance', 'Every 15s, grants nearby allies a Shield worth 20% max HP.'] },
+  huntress: { vi: ['Cuộc Săn Vô Tận', 'Phi thương xuyên thêm 2 mục tiêu và không bị giảm sát thương.'], en: ['Endless Hunt', 'Spears pierce 2 more targets with no damage falloff.'] },
+  summoner: { vi: ['Đại Quân Vong Linh', 'Mỗi lần gọi ra 3 Linh Hồn (thay vì 2), tối đa 14 Linh Hồn.'], en: ['Army of the Dead', 'Summons 3 Spirits per cast (instead of 2), up to 14 at once.'] },
+};
+export const hasSpecial = (ttree: Record<string, number> | undefined, id: TroopId) => (ttree?.[id] ?? 0) >= 4;
+
 export const TREE_BADGE = [20, 50, 110, 220];
 export const TREE_GOLD = [2000, 6000, 18000, 45000]; // x hệ số Arena đã mở
 

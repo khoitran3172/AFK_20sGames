@@ -45,10 +45,19 @@ export class BootScene extends Phaser.Scene {
     // đợi font
     try {
       await Promise.all([
+        document.fonts.load('600 20px "Baloo 2"', 'Aăâêôơưđ ạảãấầẩẫậắằẳẵặẹẻẽếềểễệịỉĩọỏõốồổỗộớờởỡợụủũứừửữựỳỵỷỹ'),
         document.fonts.load('20px "VT323"', 'Aăâêôơưđ ạảãấầẩẫậắằẳẵặẹẻẽếềểễệịỉĩọỏõốồổỗộớờởỡợụủũứừửữựỳỵỷỹ'),
         document.fonts.load('20px "Pixelify Sans"', 'Abc123'),
       ]);
     } catch { /* tiếp tục với font fallback */ }
+
+    // icon Đá Tinh Thạch: ảnh gốc 128px chỉ có ~25px nội dung ở giữa => cắt sát để hiển thị đúng cỡ
+    try {
+      const src = this.textures.get('goldRes').getSourceImage() as HTMLImageElement;
+      const cv = document.createElement('canvas'); cv.width = 28; cv.height = 28;
+      cv.getContext('2d')!.drawImage(src, 49, 47, 28, 28, 0, 0, 28, 28);
+      this.textures.addCanvas('stoneIcon', cv);
+    } catch { /* dùng ảnh gốc */ }
 
     // animation sprite
     for (const set of SPRITE_SETS) for (const [an, d] of Object.entries(set.anims)) {

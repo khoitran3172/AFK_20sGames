@@ -18,7 +18,7 @@ export class SettingsScene extends Phaser.Scene {
     };
     mk(-115, 'vi', t('lang_vi'));
     mk(115, 'en', t('lang_en'));
-    c.add(T(this, 0, -8, getLang() === 'vi' ? 'Phông chữ: VT323 (đủ dấu tiếng Việt)' : 'Font: Pixelify Sans', 20, { origin: [0.5, 0], color: '#e8d9a8' }));
+    c.add(T(this, 0, -8, getLang() === 'vi' ? 'Phông chữ: Baloo 2 (đủ dấu tiếng Việt)' : 'Font: Pixelify Sans', 20, { origin: [0.5, 0], color: '#e8d9a8' }));
     c.add(T(this, 0, 36, 'Aăâ Êô Ơư Đđ ạảãấầẩẫậắằẳẵặếềểễệ', 22, { origin: [0.5, 0], color: '#fff6dd' }));
     const rs = button(this, -115, 130, 210, 52, t('reset'), () => {
       if (window.confirm(t('reset_confirm'))) { resetSave(); location.reload(); }

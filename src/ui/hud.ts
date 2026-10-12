@@ -16,7 +16,7 @@ export class Hud {
   evBg: Phaser.GameObjects.Graphics;
   constructor(public scene: Phaser.Scene, x = 16, y = 14) {
     this.gold = chip(scene, x, y, 178, 'icon3');
-    this.stones = chip(scene, x + 188, y, 178, 'goldRes', 0x7fdcff);
+    this.stones = chip(scene, x + 188, y, 178, 'stoneIcon', 0x7fdcff);
     this.badges = chip(scene, x + 376, y, 150, 'icon6');
     this.pw = chip(scene, x + 536, y, 220, 'icon5');
     this.pw.text.setColor('#ffe08a');

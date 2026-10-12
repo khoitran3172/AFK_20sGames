@@ -73,8 +73,10 @@ export const TOTAL_ARENAS = 48;
 export const ARENAS_PER_MAP = 12;
 
 export const ARENA_STEP = 5;
+// 5 bước đầu dốc nhẹ hơn để người mới qua Arena 2-6 nhanh (sau đó x5 như cũ)
+const EARLY_STEP = [1, 1.6, 2.2, 3, 3.8, 4.4];
 export function arenaGrowth(i: number): number {
-  return i <= 0 ? 1 : ARENA_STEP;
+  return i <= 0 ? 1 : i < EARLY_STEP.length ? EARLY_STEP[i] : ARENA_STEP;
 }
 
 const BASE_MOB_HP = 70;

@@ -11,6 +11,7 @@
     "audit": "tsx tools/econ-audit.ts"
   },
   "dependencies": {
+    "@fontsource/baloo-2": "^5.3.0",
     "@fontsource/jersey-10": "^5.3.0",
     "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",

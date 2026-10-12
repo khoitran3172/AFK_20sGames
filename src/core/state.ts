@@ -99,6 +99,9 @@ export function load(): Save {
   S.ev = { ...newEventState(), ...(S.ev || {}) };
   S.tower = S.tower ? S.tower : { best: 0, day: '', used: 0 };
   S.ttree = { ...base.ttree, ...(S.ttree || {}) };
+  // save cũ có thể đang xài quân chưa mở khóa: thay bằng quân khởi đầu còn trống
+  const free = START_TROOPS.filter((t) => !S.squad.includes(t));
+  S.squad = S.squad.map((t) => (troopUnlocked(S, t) ? t : free.shift() ?? 'knight'));
   setSeq(S.itemSeq || 1);
   return S;
 }
@@ -138,6 +141,13 @@ export function unlockSkill(s: Save, id: number): boolean {
   return true;
 }
 
+/** Binh chủng khởi đầu miễn phí; còn lại phải mở khóa bằng node "Chiêu Mộ" trong Cây kỹ năng */
+export const START_TROOPS: TroopId[] = ['knight', 'archer', 'healer'];
+export function troopUnlocked(s: Save, id: TroopId): boolean {
+  return START_TROOPS.includes(id) || s.skills.some((k) => SKILL_BY_ID[k]?.troop === id);
+}
+export function troopUnlockNode(id: TroopId) { return SKILLS.find((k) => k.troop === id); }
+
 export interface Mods {
   hpMul: number; atkMul: number; aspdMul: number;
   farmGold: number; farmStone: number; badgeBonus: number;
@@ -160,10 +170,10 @@ export function mods(s: Save): Mods {
     hpMul: h(17) ? 1.2 : 1,
     atkMul: h(18) ? 1.2 : 1,
     aspdMul: h(19) ? 1.15 : 1,
-    farmGold: (h(32) ? 1.1 : 1) * (1 + eb.gold),
+    farmGold: (h(32) ? 1.1 : 1) * (h(61) ? 1.2 : 1) * (1 + eb.gold),
     farmStone: (h(33) ? 1.1 : 1) * (1 + eb.stone),
     badgeBonus: h(45) ? 1.15 : 1,
-    chestHours: h(37) ? 12 : 8,
+    chestHours: h(61) ? 24 : h(37) ? 12 : 8,
     afkYield: h(46) ? 1.25 : 1,
     troopMul: (h(16) ? 1.2 : 1) * (1 + eb.troop),
   };
@@ -203,7 +213,8 @@ export function troopCount(s: Save, id: TroopId): number {
   if ((id === 'knight' || id === 'archer') && has(s, 2)) c += 1;
   if ((id === 'healer' || id === 'wizard') && has(s, 8)) c += 1;
   c += treeFx(s.ttree?.[id] ?? 0, id).count;
-  return Math.min(c, d.maxCount + 1);
+  if (has(s, 52)) c += 1;
+  return Math.min(c, d.maxCount + 2);
 }
 
 export function troopTierCost(s: Save, id: TroopId): { badges: number; gold: number } | null {
