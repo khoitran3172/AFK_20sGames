@@ -51,7 +51,9 @@ const dayNum = t => Math.floor(localMs(t) / DAY);                       // số 
 const dayKey = t => dayNum(t);
 const accDay = () => dayKey(nowMs()) - dayKey(S.first);                // 0 = ngày đầu tiên
 const weekIdx = t => Math.floor((dayNum(t) + 3) / 7);                  // tuần bắt đầu thứ Hai
-const dayUnlocked = d => accDay() >= d;
+const LV_GATE = [1, 3, 5, 8];                       // bậc tính năng → Cấp Thương Hội yêu cầu
+const featOn = t => S.guildLv >= LV_GATE[t];
+const gateTxt = t => 'Cấp Thương Hội ' + LV_GATE[t];
 function secToNextMidnight() { const t = nowMs(), d = new Date(t); d.setHours(24, 0, 0, 0); return (d - t) / 1000; }
 
 /* ---------- Giờ Vàng ---------- */
@@ -93,6 +95,6 @@ function routeCap(r) { const R = ROUTES[r]; const k = [0.35, 0.5, 0.7, 1.0][r]; 
 const ssrFeatured = () => SSR_IDS[weekIdx(nowMs()) % SSR_IDS.length];
 
 /* ---------- Cấp thương hội ---------- */
-function addGuildXp(n) { S.guildXp += n; while (S.guildXp >= guildXpNeed(S.guildLv)) { S.guildXp -= guildXpNeed(S.guildLv); S.guildLv++; track('guild_level', { lv: S.guildLv }); toast(`🏰 Thương Hội lên Cấp ${S.guildLv}!`); } }
+function addGuildXp(n) { S.guildXp += n; while (S.guildXp >= guildXpNeed(S.guildLv)) { S.guildXp -= guildXpNeed(S.guildLv); S.guildLv++; track('guild_level', { lv: S.guildLv }); toast(`🏰 Thương Hội lên Cấp ${S.guildLv}!`); const ti = LV_GATE.indexOf(S.guildLv); if (ti > 0) toast('🔓 Mở khóa: ' + UNLOCK_TXT[ti]); } }
 
 const curGeneral = () => GENERALS.find(g => g.id === S.general) || GENERALS[0];

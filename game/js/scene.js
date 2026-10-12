@@ -19,8 +19,8 @@ const FIX = [ // công trình hạ tầng: tab, nhãn
   { id: 'castle', img: 'Castle', x: 320, y: 0, w: 320, h: 256, tab: 'journey', label: () => `Thương Hội Cấp ${S.guildLv}` },
   { id: 'market', img: 'House1', x: 100, y: 20, w: 128, h: 192, tab: 'village', label: () => `Chợ Lv${S.fac.market}` },
   { id: 'warehouse', img: 'House2', x: 700, y: 20, w: 128, h: 192, tab: 'village', label: () => `Kho Lv${S.fac.warehouse}` },
-  { id: 'tavern', img: 'House3', x: 830, y: 90, w: 128, h: 192, tab: 'village', label: () => S.fac.tavern ? `Quán Trọ Lv${S.fac.tavern}` : 'Quán Trọ (ngày 2)', locked: () => !dayUnlocked(1) },
-  { id: 'port', img: 'Tower', x: 10, y: 130, w: 128, h: 256, tab: 'trade', label: () => dayUnlocked(1) ? `Bến Cảng Lv${S.fac.port}` : 'Bến Cảng (ngày 2)', locked: () => !dayUnlocked(1) },
+  { id: 'tavern', img: 'House3', x: 830, y: 90, w: 128, h: 192, tab: 'village', label: () => S.fac.tavern ? `Quán Trọ Lv${S.fac.tavern}` : `Quán Trọ (Cấp ${LV_GATE[1]})`, locked: () => !featOn(1) },
+  { id: 'port', img: 'Tower', x: 10, y: 130, w: 128, h: 256, tab: 'trade', label: () => featOn(1) ? `Bến Cảng Lv${S.fac.port}` : `Bến Cảng (Cấp ${LV_GATE[1]})`, locked: () => !featOn(1) },
 ];
 const FRAMES = { Idle: 8, Run: 6, Run_Meat: 6, Run_Wood: 6, Run_Gold: 6, Run_Pickaxe: 6, Run_Knife: 6, Run_Axe: 6, Idle_Knife: 8, Idle_Axe: 8, Idle_Pickaxe: 8, Interact_Knife: 4, Interact_Axe: 6, Interact_Pickaxe: 6 };
 
@@ -96,7 +96,7 @@ function sceneDraw() {
   // trang trí: bụi cây & đá
   [[30, 520], [345, 395], [650, 380], [215, 360], [60, 420], [940, 380]].forEach(([x, y], i) => items.push({ y, d: () => drawFrame(img(TS(i % 2 ? 'Bushe2' : 'Bushe1')), 128, 128, frame('Idle', 6) % 8, x, y, 1, false) }));
   // địa điểm sản xuất (cảnh vật)
-  const locked = k => !dayUnlocked(BUILD[k].unlockDay);
+  const locked = k => !featOn(BUILD[k].unlockDay);
   // cừu (trang trại)
   [[210, 420, 0], [300, 495, 2], [120, 500, 4]].forEach(([x, y, o]) => items.push({ y, d: () => { const sc = 0.9; drawFrame(img(TS('Sheep_Grass')), 128, 128, Math.floor(sceneT * 6 + o) % 12, x, y, sc, false); } }));
   // cây (xưởng gỗ)
@@ -109,7 +109,7 @@ function sceneDraw() {
   for (const f of FIX) items.push({ y: f.y + f.h, d: () => { const im = img(TS(f.img)); const lk = f.locked && f.locked(); if (lk) { cx.save(); cx.filter = 'grayscale(1) brightness(.7)'; } if (im.complete) cx.drawImage(im, f.x, f.y); if (lk) cx.restore(); hot.push({ x: f.x, y: f.y, w: f.w, h: f.h, tab: f.tab }); } });
   // tướng lĩnh đi tuần quanh lâu đài
   { const g = curGeneral(), ph = sceneT * 0.28, gx = 330 + 170 * (0.5 + 0.5 * Math.sin(ph)), right = Math.cos(ph) > 0, gy = 292;
-    items.push({ y: gy, d: () => { cx.fillStyle = 'rgba(0,0,0,.3)'; cx.beginPath(); cx.ellipse(gx, gy + 3, 26, 7, 0, 0, 7); cx.fill(); drawGen(cx, g, 'walk', sceneT, gx, gy, 2.1, !right); plate(g.n + ' · Tướng lĩnh', gx, gy - 134, '#ffe27a'); hot.push({ x: gx - 45, y: gy - 130, w: 90, h: 135, tab: 'battle' }); } }); }
+    items.push({ y: gy, d: () => { cx.fillStyle = 'rgba(0,0,0,.3)'; cx.beginPath(); cx.ellipse(gx, gy + 3, 26, 7, 0, 0, 7); cx.fill(); drawGen(cx, g, 'walk', sceneT, gx, gy, 2.1, right); plate(g.n + ' · Tướng lĩnh', gx, gy - 134, '#ffe27a'); hot.push({ x: gx - 45, y: gy - 130, w: 90, h: 135, tab: 'battle' }); } }); }
   // pawn
   for (const p of pawns) items.push({ y: p.y, d: () => { const { sheet, f } = pawnSprite(p); drawFrame(sheet, 192, 192, f, p.x, p.y, 0.7, p.face < 0); } });
   // anh hùng được phân công
@@ -127,7 +127,7 @@ function sceneDraw() {
   // nhãn
   for (const f of FIX) plate(f.label(), f.x + f.w / 2, f.y + f.h + (f.id === 'castle' ? 14 : 6), f.locked && f.locked() ? '#999' : '#f3c14b');
   const lab = { farm: [250, 505], lumber: [850, 505], mine: [650, 505], garden: [440, 508] };
-  for (const k of BKEYS) plate(locked(k) ? `${SITES[k].name} (ngày ${BUILD[k].unlockDay + 1})` : S.lv[k] ? `${SITES[k].name} Lv${S.lv[k]}` : `${SITES[k].name} — chưa xây`, lab[k][0], lab[k][1], locked(k) ? '#999' : '#fff');
+  for (const k of BKEYS) plate(locked(k) ? `${SITES[k].name} (Cấp ${LV_GATE[BUILD[k].unlockDay]})` : S.lv[k] ? `${SITES[k].name} Lv${S.lv[k]}` : `${SITES[k].name} — chưa xây`, lab[k][0], lab[k][1], locked(k) ? '#999' : '#fff');
   // chữ bay
   for (const f of floats) { cx.globalAlpha = 1 - f.t / 1.6; cx.font = '800 17px Texturina, serif'; cx.fillStyle = '#ffe27a'; cx.strokeStyle = '#000'; cx.lineWidth = 3; cx.strokeText(f.txt, f.x - 20, f.y - f.t * 30); cx.fillText(f.txt, f.x - 20, f.y - f.t * 30); cx.globalAlpha = 1; }
   cx.restore();

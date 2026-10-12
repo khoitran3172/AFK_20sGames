@@ -116,7 +116,7 @@ function drawArena() {
   const gen = curGeneral(), cast = BT.gen.cast > 0, gy = BT.gen.y + (cast ? -Math.abs(Math.sin(t * 14)) * 22 : 0);
   cx.fillStyle = 'rgba(0,0,0,.3)'; cx.beginPath(); cx.ellipse(BT.gen.x, BT.gen.y + 4, 46, 11, 0, 0, 7); cx.fill();
   if (cast) { cx.strokeStyle = `rgba(255,213,74,${BT.gen.cast})`; cx.lineWidth = 6; cx.beginPath(); cx.ellipse(BT.gen.x, BT.gen.y + 4, 40 + (1.2 - BT.gen.cast) * 120, 12 + (1.2 - BT.gen.cast) * 40, 0, 0, 7); cx.stroke(); }
-  drawGen(cx, gen, cast ? 'walk' : 'idle', t, BT.gen.x, gy, 3.3, false);
+  drawGen(cx, gen, cast ? 'walk' : 'idle', t, BT.gen.x, gy, 3.3, true);   // sprite gốc hướng trái → lật để quay mặt về phía quái
   cx.font = '800 17px Texturina,serif'; cx.textAlign = 'center'; cx.lineWidth = 4; cx.strokeStyle = '#000'; cx.strokeText(gen.n, BT.gen.x, BT.gen.y + 30); cx.fillStyle = '#ffe27a'; cx.fillText(gen.n, BT.gen.x, BT.gen.y + 30); cx.textAlign = 'start';
   const all = [...BT.units.filter(u => u.alive), ...BT.dead].sort((a, b) => a.y - b.y); for (const u of all) drawUnit(cx, u, t);
   for (const s of V.shots) { const p = s.t / s.dur, x = s.x + (s.tx - s.x) * p, y = s.y + (s.ty - s.y) * p - Math.sin(p * Math.PI) * 30; cx.fillStyle = s.side === 'p' ? '#8ff' : '#ff7a4a'; cx.beginPath(); cx.arc(x, y, 8, 0, 7); cx.fill(); cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(x, y, 4, 0, 7); cx.fill(); }
@@ -192,5 +192,5 @@ function pBattle() {
       <div class="row" style="margin-top:8px"><button class="sm gold" data-a="bautoteam">Gợi ý đội mạnh nhất</button><span class="mut sp">Khả năng thắng màn ${next}: <b style="color:${win >= .7 ? 'var(--good)' : win >= .4 ? 'var(--gold)' : 'var(--bad)'}">~${Math.round(win * 100)}%</b> (ước tính khi bật Auto)</span></div>
       <div class="mut" style="margin-top:6px">${gear}</div></div>
     <div class="card"><h3>Chiến dịch</h3>${stages.join('')}</div>
-    <div class="card"><h3>Mạnh hóa thẻ <span class="mut">(bấm thẻ để thêm/bớt khỏi đội)</span></h3><div class="rcgrid">${roster_ || '<span class="mut">Chưa có thẻ — hãy Chiêu mộ!</span>'}</div></div>`;
+    <div class="card wide"><h3>Mạnh hóa thẻ <span class="mut">(bấm thẻ để thêm/bớt khỏi đội)</span></h3><div class="rcgrid">${roster_ || '<span class="mut">Chưa có thẻ — hãy Chiêu mộ!</span>'}</div></div>`;
 }

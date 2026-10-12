@@ -99,13 +99,13 @@ function catchUp() {
 
 /* ---------- Hành động ---------- */
 function upgradeBuild(k) {
-  const l = S.lv[k]; if (!dayUnlocked(BUILD[k].unlockDay)) return;
+  const l = S.lv[k]; if (!featOn(BUILD[k].unlockDay)) return;
   const c = upCost(k); if (S.gold < c) return;
   S.gold -= c; S.lv[k]++; bump('ups'); addGuildXp(2); track('upgrade', { k, lv: S.lv[k] });
 }
-function upgradeMax(k) { let n = 0; while (n < 100 && S.gold >= upCost(k) && dayUnlocked(BUILD[k].unlockDay)) { upgradeBuild(k); n++; } }
+function upgradeMax(k) { let n = 0; while (n < 100 && S.gold >= upCost(k) && featOn(BUILD[k].unlockDay)) { upgradeBuild(k); n++; } }
 function upgradeFac(k) {
-  if (S.fac[k] >= FAC[k].max || !dayUnlocked(FAC[k].unlockDay)) return;
+  if (S.fac[k] >= FAC[k].max || !featOn(FAC[k].unlockDay)) return;
   const c = facCost(k); if (S.gold < c) return;
   S.gold -= c; S.fac[k]++; bump('ups'); addGuildXp(3); track('upgrade_fac', { k, lv: S.fac[k] });
 }
@@ -116,7 +116,7 @@ function sellAll() {
   toast(t ? `Giao hàng +${fmt(t)} 🪙${mult > 1 ? ' (Giờ Vàng x1.5)' : ''}` : 'Kho trống');
 }
 function sendCaravan(route, pct) {
-  if (!dayUnlocked(ROUTES[route].unlockDay) || S.caravans.length >= caravanSlots()) return;
+  if (!featOn(ROUTES[route].unlockDay) || S.caravans.length >= caravanSlots()) return;
   const R = ROUTES[route]; const bet = Math.floor(Math.min(S.gold * pct, routeCap(route)));
   if (bet < 50) { toast('Không đủ vàng để xuất phát'); return; }
   S.gold -= bet; S.caravans.push({ route, bet, start: nowMs(), end: nowMs() + R.time * 1000 });
@@ -189,7 +189,7 @@ function doPull(type, n) {
     for (let i = 0; i < n; i++) res.push(pullChar(tutorial10 && i === n - 1));
     if (tutorial10) S.tut.tenUsed = true;
   } else {
-    if (!dayUnlocked(2)) { toast('Rương trang bị mở vào ngày 3'); return; }
+    if (!featOn(2)) { toast('Rương trang bị mở ở ' + gateTxt(2)); return; }
     const cost = n === 10 ? COST.chest10 : COST.chest * n; if (S.gold < cost) { toast('Không đủ vàng!'); return; }
     S.gold -= cost; for (let i = 0; i < n; i++) res.push(pullChest());
   }
@@ -235,7 +235,7 @@ function claimGift() { if (nowMs() < S.giftAt) return; S.giftAt = nowMs() + 6000
 
 /* ---------- Prestige: Mở Chi Nhánh ---------- */
 const renownGain = () => Math.max(0, Math.floor(Math.sqrt(S.prestige.run / 2e6)));
-function canPrestige() { return dayUnlocked(3) && renownGain() >= 1; }
+function canPrestige() { return featOn(3) && renownGain() >= 1; }
 function doPrestige() {
   if (!canPrestige()) return; const g = renownGain();
   S.renown += g; S.prestige.count++; S.prestige.totalRenownEarned += g; S.prestige.run = 0;
@@ -264,7 +264,7 @@ function badges() {
   const b = {};
   b.journey = JOURNEY.some(j => j.day <= accDay() && j.goals.some(g => !S.jclaimed[g.id] && g.chk(S)));
   b.quest = DAILY.some(q => !S.daily.claimed[q.id] && q.get(S) >= dailyGoal(q)) || AP_CHESTS.some((c, i) => !S.daily.apClaimed[i] && S.daily.ap >= c.ap) || S.loginClaimed !== S.daily.key || ACH.some(a => (S.achTier[a.id] || 0) < a.tiers.length && a.get(S) >= a.tiers[S.achTier[a.id] || 0]);
-  b.pass = dayUnlocked(2) && PASS.some((_, i) => !S.pass.claimed[i] && Math.floor(S.pass.xp / PASS_XP) >= i + 1);
+  b.pass = featOn(2) && PASS.some((_, i) => !S.pass.claimed[i] && Math.floor(S.pass.xp / PASS_XP) >= i + 1);
   b.gacha = S.tickets > 0 || S.gems >= COST.pull || S.ssrPick > 0;
   b.trade = S.caravans.some(c => c.end <= nowMs());
   b.rival = !!S.week.pending;

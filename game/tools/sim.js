@@ -25,13 +25,13 @@ function playSession() {
   // nâng cấp: ưu tiên ROI (sản lượng / chi phí)
   for (let n=0;n<400;n++) {
     let best=null,bv=0;
-    for (const k of BKEYS) { if(!dayUnlocked(BUILD[k].unlockDay)) continue; const c=upCost(k); if(S.gold<c) continue; const v=BUILD[k].base*BUILD[k].good.length/c*(GOOD[BUILD[k].good].price); if(v>bv){bv=v;best=['b',k];} }
-    for (const k of FKEYS) { if(!dayUnlocked(FAC[k].unlockDay)||S.fac[k]>=FAC[k].max) continue; const c=facCost(k); if(S.gold<c*1.0) continue; const v=0.5/c; if(v>bv*0.7 && S.fac[k] < 6+S.guildLv){bv=v;best=['f',k];} }
+    for (const k of BKEYS) { if(!featOn(BUILD[k].unlockDay)) continue; const c=upCost(k); if(S.gold<c) continue; const v=BUILD[k].base*BUILD[k].good.length/c*(GOOD[BUILD[k].good].price); if(v>bv){bv=v;best=['b',k];} }
+    for (const k of FKEYS) { if(!featOn(FAC[k].unlockDay)||S.fac[k]>=FAC[k].max) continue; const c=facCost(k); if(S.gold<c*1.0) continue; const v=0.5/c; if(v>bv*0.7 && S.fac[k] < 6+S.guildLv){bv=v;best=['f',k];} }
     if(!best)break; best[0]==='b'?upgradeBuild(best[1]):upgradeFac(best[1]);
   }
   for (const h of HEROES) if(S.own[h.id]) for(let i=0;i<30&&S.gold>heroLvCost(h,S.own[h.id])*4;i++) levelHero(h.id);
   // thương đoàn: tuyến dài nhất có thể
-  while (S.caravans.length < caravanSlots()) { let r=-1; for(let i=ROUTES.length-1;i>=0;i--) if(dayUnlocked(ROUTES[i].unlockDay)){r=i;break;} if(r<0||S.gold<100)break; const before=S.caravans.length; sendCaravan(r,0.5); if(S.caravans.length===before)break; }
+  while (S.caravans.length < caravanSlots()) { let r=-1; for(let i=ROUTES.length-1;i>=0;i--) if(featOn(ROUTES[i].unlockDay)){r=i;break;} if(r<0||S.gold<100)break; const before=S.caravans.length; sendCaravan(r,0.5); if(S.caravans.length===before)break; }
   if (canPrestige() && S.prestige.run > 4*50000*Math.pow(S.prestige.count+1,2)) doPrestige();
 }
 const marks = [];

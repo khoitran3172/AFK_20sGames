@@ -21,6 +21,7 @@ const BUILD = {
   mine:  {n:'Mỏ Vàng',     good:'ore', base:0.5,cost:250, unlockDay:1, desc:'Khai thác vàng thô'},
   garden:{n:'Tu Viện Dược',good:'herb',base:0.3,cost:700, unlockDay:2, desc:'Trồng và bào chế dược liệu'},
 };
+const UNLOCK_TXT = ['', 'Mỏ Vàng, Bến Cảng, Quán Trọ, Bảng Xếp Hạng, tuyến Cảng Biển', 'Tu Viện Dược, Rương Trang Bị, Sổ Thương Hội, tuyến Thành Đô', 'Mở Chi Nhánh (Prestige), tuyến Hành Trình Đêm'];
 const BKEYS = Object.keys(BUILD);
 const MILESTONES = [10,25,50,100,200,400];       // mỗi mốc x2 sản lượng
 
@@ -200,7 +201,7 @@ const LOGIN = [
 
 /* ---------- Hành trình 7 ngày: mục tiêu theo ngày tài khoản ---------- */
 const JOURNEY = [
-  {day:0, title:'Ngày 1 — Khởi nghiệp', teaser:'Mai: mở Mỏ Vàng, Bến Cảng, Quán Trọ và Bảng Xếp Hạng!', goals:[
+  {day:0, title:'Ngày 1 — Khởi nghiệp', teaser:'Đạt Cấp Thương Hội 3 để mở Mỏ Vàng, Bến Cảng, Quán Trọ và Bảng Xếp Hạng!', goals:[
     {id:'j0a',n:'Nâng Trang Trại lên Lv 5',      chk:s=>s.lv.farm>=5,           rew:{gems:140}},
     {id:'j0b',n:'Nâng Xưởng Gỗ lên Lv 3',        chk:s=>s.lv.lumber>=3,         rew:{gems:100}},
     {id:'j0c',n:'Chiêu mộ 10 lần (tân thủ)',      chk:s=>s.stats.pulls>=10,      rew:{gems:210}},
@@ -208,13 +209,13 @@ const JOURNEY = [
     {id:'j0f',n:'Thắng 1 trận Đấu Thẻ',           chk:s=>s.battle.cleared>=1,   rew:{gems:100,tickets:1}},
     {id:'j0e',n:'Phân công 1 anh hùng',           chk:s=>Object.keys(s.assign).length>=1, rew:{gems:140}},
   ]},
-  {day:1, title:'Ngày 2 — Mở rộng', teaser:'Ngày mai: Tu Viện Dược, Rương trang bị, Sổ Thương Hội!', goals:[
+  {day:1, title:'Ngày 2 — Mở rộng', teaser:'Đạt Cấp 5: Tu Viện Dược, Rương trang bị, Sổ Thương Hội!', goals:[
     {id:'j1a',n:'Xây Mỏ Vàng',                    chk:s=>s.lv.mine>=1,           rew:{gems:140}},
     {id:'j1b',n:'Chợ Trung Tâm Lv 5',             chk:s=>s.fac.market>=5,        rew:{gems:140}},
     {id:'j1c',n:'Gửi thương đoàn Cảng Biển',      chk:s=>s.stats.routeUse[1]>=1, rew:{gems:180,tickets:1}},
     {id:'j1d',n:'Sưu tập 6 anh hùng',             chk:s=>Object.keys(s.own).length>=6, rew:{gems:210}},
   ]},
-  {day:2, title:'Ngày 3 — Chuyên môn', teaser:'Ngày mai: Mở Chi Nhánh (Prestige) với bội số vĩnh viễn!', goals:[
+  {day:2, title:'Ngày 3 — Chuyên môn', teaser:'Đạt Cấp 8: Mở Chi Nhánh (Prestige) với bội số vĩnh viễn!', goals:[
     {id:'j2a',n:'Xây Tu Viện Dược',               chk:s=>s.lv.garden>=1,         rew:{gems:180}},
     {id:'j2b',n:'Sở hữu 1 trang bị',              chk:s=>Object.keys(s.gear).length>=1,  rew:{gems:140,tickets:1}},
     {id:'j2c',n:'Đạt Cấp Thương Hội 6',           chk:s=>s.guildLv>=6,           rew:{gems:210}},

@@ -63,24 +63,24 @@ function slotBox(slot) {
   const id = S.assign[slot], h = id != null ? HEROES[id] : null;
   return `<div class="slot">${h ? heroImg(h, 40) : '<span class="hs empty" style="width:44px;height:44px">+</span>'}<div class="sp"><div class="mut">Nhân sự ${JOBN[slot]}</div>${heroOpts(slot)}</div><div class="up">${h ? '+' + Math.round(slotBuff(slot) * 100) + '%' : ''}</div></div>`;
 }
-function lockCard(name, day) { return `<div class="card lock"><div class="row"><span style="font-size:26px">🔒</span><div class="sp"><b>${name}</b><div class="mut">Mở vào ngày ${day + 1} (còn ${fmtT(secToNextMidnight() + (day - accDay() - 1) * 86400)})</div></div></div></div>`; }
+function lockCard(name, day) { return `<div class="card lock"><div class="row"><span style="font-size:26px">🔒</span><div class="sp"><b>${name}</b><div class="mut">Mở khi đạt ${gateTxt(day)} (hiện Cấp ${S.guildLv})</div></div></div></div>`; }
 
 function pVillage() {
   const cap = capacity();
   const builds = BKEYS.map(k => {
-    const b = BUILD[k]; if (!dayUnlocked(b.unlockDay)) return lockCard(b.n, b.unlockDay);
+    const b = BUILD[k]; if (!featOn(b.unlockDay)) return lockCard(b.n, b.unlockDay);
     const l = S.lv[k], c = upCost(k), nm = MILESTONES.find(m => m > l);
     return `<div class="card"><div class="row">${ico(GOOD[b.good].icon, 40)}<div class="sp"><b>${b.n}</b> <span class="mut">Lv ${l}${mile(l) > 1 ? ' · x' + mile(l) : ''}</span><div class="mut">${l ? '+' + fmt1(prodOf(k)) + ' ' + GOOD[b.good].n + '/s' : b.desc}${nm ? ` · mốc x2 ở Lv ${nm}` : ''}</div></div>
       <button class="gold" data-a="up:${k}" ${S.gold < c ? 'disabled' : ''}>${l ? 'Nâng' : 'Xây'}<br><small>${fmt(c)}</small></button><button class="sm gold" data-a="upmax:${k}" ${S.gold < c ? 'disabled' : ''}>MAX</button></div>${l ? slotBox(k) : ''}</div>`;
   }).join('');
   const facs = FKEYS.map(k => {
-    const f = FAC[k]; if (!dayUnlocked(f.unlockDay)) return lockCard(f.n, f.unlockDay);
+    const f = FAC[k]; if (!featOn(f.unlockDay)) return lockCard(f.n, f.unlockDay);
     const l = S.fac[k], c = facCost(k);
     return `<div class="row" style="margin:6px 0"><div class="sp"><b>${f.n}</b> <span class="mut">Lv ${l}/${f.max}</span><div class="mut">${f.desc(l)}</div></div><button class="blue" data-a="fac:${k}" ${S.gold < c || l >= f.max ? 'disabled' : ''}>${l >= f.max ? 'MAX' : fmt(c) + ' 🪙'}</button></div>`;
   }).join('');
   const stock = GOODS.map(g => `<div class="row" style="margin:3px 0">${ico(GOOD[g].icon, 20)}<div class="sp"><div class="bar ${S[g] >= cap * .98 ? 'red' : ''}"><i style="width:${Math.min(100, S[g] / cap * 100)}%"></i></div></div><span class="mut" style="width:96px;text-align:right">${fmt(S[g])}/${fmt(cap)}</span></div>`).join('');
   const pc = canPrestige(), pg = renownGain();
-  const prest = dayUnlocked(3) ? `<div class="card"><h3>🏅 Mở Chi Nhánh (Prestige)</h3><div class="mut">Đặt lại vàng + công trình sản xuất (giữ anh hùng, trang bị, ngọc, hạ tầng). Nhận Danh Vọng: mỗi điểm +5% sản lượng vĩnh viễn.</div><div class="row" style="margin-top:6px"><div class="sp">Danh Vọng hiện có: <b>${S.renown}</b> · Nhận thêm: <b class="up">+${pg}</b><div class="mut">Thu nhập lần này: ${fmt(S.prestige.run)} (cần ≥ 50K)</div></div><button class="red" data-a="prestige" ${pc ? '' : 'disabled'}>Mở chi nhánh</button></div></div>` : lockCard('Mở Chi Nhánh (Prestige)', 3);
+  const prest = featOn(3) ? `<div class="card"><h3>🏅 Mở Chi Nhánh (Prestige)</h3><div class="mut">Đặt lại vàng + công trình sản xuất (giữ anh hùng, trang bị, ngọc, hạ tầng). Nhận Danh Vọng: mỗi điểm +5% sản lượng vĩnh viễn.</div><div class="row" style="margin-top:6px"><div class="sp">Danh Vọng hiện có: <b>${S.renown}</b> · Nhận thêm: <b class="up">+${pg}</b><div class="mut">Thu nhập lần này: ${fmt(S.prestige.run)} (cần ≥ 50K)</div></div><button class="red" data-a="prestige" ${pc ? '' : 'disabled'}>Mở chi nhánh</button></div></div>` : lockCard('Mở Chi Nhánh (Prestige)', 3);
   return `<div class="card"><h3>Kho hàng & Auto-Trade</h3>${stock}
     <div class="row" style="margin-top:8px"><button class="${S.auto ? '' : 'red'}" data-a="auto">Auto-Trade: ${S.auto ? 'BẬT' : 'TẮT'}</button><span class="mut sp">Bán tự động ${Math.round(autoPct() * 100)}% giá. Giữ lại trong kho:</span>
     <select data-hold>${[0, .25, .5, .75].map(v => `<option value="${v}" ${S.hold === v ? 'selected' : ''}>${v * 100}%</option>`).join('')}</select></div>
@@ -99,7 +99,7 @@ function pTrade() {
   const active = S.caravans.map((c, i) => { const R = ROUTES[c.route], left = (c.end - nowMs()) / 1000, pct = Math.min(100, 100 - left / R.time * 100);
     return `<div class="card"><div class="row"><div class="sp"><b>🛒 ${R.n}</b> <span class="mut">vốn ${fmt(c.bet)}🪙</span><div class="bar"><i style="width:${pct}%"></i></div><div class="mut">${left > 0 ? 'còn ' + fmtT(left) : 'Đã về!'}</div></div><button class="gold" data-a="col:${i}" ${left > 0 ? 'disabled' : ''}>Thu hoạch</button></div></div>`; }).join('');
   const free = slots - S.caravans.length;
-  const routes = free > 0 ? ROUTES.map((R, i) => { if (!dayUnlocked(R.unlockDay)) return `<div class="row mut" style="margin:5px 0">🔒 ${R.n} (ngày ${R.unlockDay + 1})</div>`; const cap = routeCap(i);
+  const routes = free > 0 ? ROUTES.map((R, i) => { if (!featOn(R.unlockDay)) return `<div class="row mut" style="margin:5px 0">🔒 ${R.n} (Cấp ${LV_GATE[R.unlockDay]})</div>`; const cap = routeCap(i);
     return `<div style="margin:7px 0"><div class="row"><div class="sp"><b>${R.n}</b> <span class="mut">${fmtT(R.time)} · lãi x${((R.mult - 1) * tradeBonus() + 1).toFixed(2)}</span><div class="mut">Vốn tối đa ${fmt(cap)}🪙${R.gem[0] ? ` · có cơ hội ${R.gem[0]}+💎` : ''}</div></div>
       <button class="sm gold" data-a="car:${i}:0.25" ${S.gold < 50 ? 'disabled' : ''}>25%</button><button class="sm gold" data-a="car:${i}:0.5" ${S.gold < 50 ? 'disabled' : ''}>50%</button><button class="sm gold" data-a="car:${i}:1" ${S.gold < 50 ? 'disabled' : ''}>MAX</button></div></div>`; }).join('') : `<div class="mut">Hết chỗ — nâng Bến Cảng để thêm thương đoàn.</div>`;
   return `<div class="card"><h3>Chợ giá biến động</h3><div class="row" style="flex-wrap:wrap;gap:10px">${mk}</div>
@@ -118,7 +118,7 @@ function pGacha() {
    <button class="gold" data-a="pull:hero:10" ${!t10 && S.tickets < 10 && S.gems < (10 - Math.min(10, S.tickets)) * COST.pull ? 'disabled' : ''}>×10 ${t10 ? '(Tân thủ: chắc SSR)' : S.tickets >= 10 ? '10🎫' : COST.pull10 + '💎'}</button><span class="mut sp">Vé: ${S.tickets} · Ngọc: ${fmt(S.gems)}</span></div>
    <div class="mut" style="margin-top:6px">Trùng anh hùng → tăng sao (+20% buff/sao, tối đa 6★). Đã quay: ${S.stats.pulls}</div></div>`;
   const pick = S.ssrPick ? `<div class="card" style="border-color:var(--SSR)"><div class="row"><b class="sp">🎟 Bạn có ${S.ssrPick} Vé SSR tự chọn!</b><button class="gold" data-a="pickssr">Chọn SSR</button></div></div>` : '';
-  const chest = dayUnlocked(2) ? `<div class="card banner chest"><h3>🧰 Rương Trang Bị</h3><div class="mut">Vũ khí, Giáp, Trang sức, Thuốc. Mỗi ô dùng món tốt nhất, trùng → +25%/cấp. SSR ${chestSsrRate().toFixed(1)}% · SR ${PITY.chest.sr}% · R ${PITY.chest.r}%.</div>
+  const chest = featOn(2) ? `<div class="card banner chest"><h3>🧰 Rương Trang Bị</h3><div class="mut">Vũ khí, Giáp, Trang sức, Thuốc. Mỗi ô dùng món tốt nhất, trùng → +25%/cấp. SSR ${chestSsrRate().toFixed(1)}% · SR ${PITY.chest.sr}% · R ${PITY.chest.r}%.</div>
    <div class="pity">${pityBar('Pity SSR', S.pity.ch, PITY.chest.hard)}${pityBar('Pity SR', S.pity.chsr, 10)}</div>
    <div class="row"><button class="gold" data-a="pull:gear:1" ${S.gold < COST.chest ? 'disabled' : ''}>×1 · ${fmt(COST.chest)}🪙</button><button class="gold" data-a="pull:gear:10" ${S.gold < COST.chest10 ? 'disabled' : ''}>×10 · ${fmt(COST.chest10)}🪙</button></div></div>` : lockCard('Rương Trang Bị', 2);
   const gift = `<div class="card"><div class="row"><span class="mut sp">🎁 Quà Thương Hội: 60💎 mỗi 10 phút</span><button class="blue" data-a="gift" ${nowMs() < S.giftAt ? 'disabled' : ''}>${nowMs() < S.giftAt ? fmtT((S.giftAt - nowMs()) / 1000) : 'Nhận'}</button></div></div>`;
@@ -126,12 +126,12 @@ function pGacha() {
 }
 
 function pTeam() {
-  const slots = ['farm', 'lumber', 'mine', 'garden', 'trade'].filter(s => s === 'trade' || S.lv[s] > 0 || dayUnlocked(BUILD[s].unlockDay)).map(slotBox).join('');
+  const slots = ['farm', 'lumber', 'mine', 'garden', 'trade'].filter(s => s === 'trade' || S.lv[s] > 0 || featOn(BUILD[s].unlockDay)).map(slotBox).join('');
   const list = HEROES.slice().sort((a, b) => (!!S.own[b.id] - !!S.own[a.id]) || RN.indexOf(b.r) - RN.indexOf(a.r) || a.id - b.id).map(h => {
     const o = S.own[h.id];
     return `<div class="ch ${o ? '' : 'locked'}" title="${h.story}">${heroImg(h, 48)}<div>${tag(h.r)} <b>${h.n}</b></div><div class="stars">${o ? '★'.repeat(o.star) + '☆'.repeat(6 - o.star) : '???'}</div><div class="mut">${JOBN[h.job]} · +${RB[h.r]}%${o ? `<br>⚔ ${heroCard(h).atk} ❤ ${heroCard(h).hp}` : ''}${o ? `<br>Lv ${o.lv}/${heroLvCap(o)} · mảnh ${o.shard}/${o.star}` : ''}</div>${o && o.lv < heroLvCap(o) ? `<button class="sm" data-a="hlv:${h.id}" ${S.gold < heroLvCost(h, o) ? 'disabled' : ''}>Lên cấp ${fmt(heroLvCost(h, o))}</button>` : ''}</div>`;
   }).join('');
-  return `<div class="card"><h3>Phân công (khớp nghề = buff x2)</h3>${slots}</div><div class="card"><h3>Bộ sưu tập ${Object.keys(S.own).length}/${HEROES.length}</h3><div class="chars">${list}</div></div>`;
+  return `<div class="card"><h3>Phân công (khớp nghề = buff x2)</h3>${slots}</div><div class="card wide"><h3>Bộ sưu tập ${Object.keys(S.own).length}/${HEROES.length}</h3><div class="chars">${list}</div></div>`;
 }
 function pGear() {
   return ['weapon', 'armor', 'charm', 'potion'].map(sl => `<div class="card"><h3>${GSLOT[sl]} <span class="mut">— ${GDESC[sl]}: +${Math.round(gearBonus(sl) * 100)}%</span></h3><div class="chars">` +
@@ -139,7 +139,7 @@ function pGear() {
 }
 
 function pJourney() {
-  const d = accDay(); let out = `<div class="card"><h3>🗺 Hành Trình Tân Thương Nhân (7 ngày)</h3><div class="mut">Mỗi ngày mở thêm tính năng & mục tiêu mới. Hoàn thành để nhận ngọc, vé và Vé SSR tự chọn ở ngày 7.</div></div>`;
+  const d = accDay(); let out = `<div class="card"><h3>🗺 Hành Trình Tân Thương Nhân (7 ngày)</h3><div class="mut">Mỗi ngày có mục tiêu mới (tính năng mở theo Cấp Thương Hội). Hoàn thành để nhận ngọc, vé và Vé SSR tự chọn ở ngày 7.</div></div>`;
   for (const j of JOURNEY) {
     if (j.day > d) { out += `<div class="card lock"><b>🔒 ${j.title}</b><div class="mut">Mở sau ${fmtT(secToNextMidnight() + (j.day - d - 1) * 86400)}</div></div>`; continue; }
     const done = j.goals.filter(g => S.jclaimed[g.id]).length;
@@ -166,13 +166,13 @@ function pQuest() {
   return cal + dq + ach;
 }
 function pPass() {
-  if (!dayUnlocked(2)) return lockCard('Sổ Thương Hội (Season Pass miễn phí)', 2);
+  if (!featOn(2)) return lockCard('Sổ Thương Hội (Season Pass miễn phí)', 2);
   const tiers = Math.floor(S.pass.xp / PASS_XP);
   return `<div class="card"><h3>🎖 Sổ Thương Hội — Mùa ${S.pass.season}</h3><div class="mut">Điểm hoạt động hằng ngày → XP. Mùa kéo dài 28 ngày, 30 bậc miễn phí. Bậc 10/20/30 có thưởng lớn (30: Vé SSR tự chọn).</div><div class="bar" style="margin:8px 0"><i style="width:${Math.min(100, S.pass.xp % PASS_XP / PASS_XP * 100)}%"></i></div><div class="mut">Bậc ${Math.min(30, tiers)}/30 · XP ${S.pass.xp}</div></div>
   <div class="card"><div class="pass">${PASS.map((r, i) => `<div class="ptier ${S.pass.claimed[i] ? 'got' : tiers >= i + 1 ? 'ok' : ''}"><b>${i + 1}</b><br>${rewTxt(r)}<br><button class="sm gold" data-a="pass:${i}" ${!S.pass.claimed[i] && tiers >= i + 1 ? '' : 'disabled'}>${S.pass.claimed[i] ? '✔' : 'Nhận'}</button></div>`).join('')}</div></div>`;
 }
 function pRival() {
-  if (!dayUnlocked(1)) return lockCard('Bảng xếp hạng Thương Hội', 1);
+  if (!featOn(1)) return lockCard('Bảng xếp hạng Thương Hội', 1);
   const wk = S.week.key, b = botScores(wk, S.week.ref, weekProgress(wk)); b.push({ n: '⭐ Thương Hội của bạn', s: S.week.earn, me: 1 }); b.sort((x, y) => y.s - x.s);
   const left = ((wk * 7 - 3 + 7) - localMs(nowMs()) / DAY) * 86400;
   const pend = S.week.pending ? `<div class="card" style="border-color:var(--gold)"><div class="row"><div class="sp"><b>Thưởng tuần trước: hạng ${S.week.pending.rank}</b><div class="mut">${rewTxt(S.week.pending.rew)}</div></div><button class="gold" data-a="week">Nhận</button></div></div>` : '';
