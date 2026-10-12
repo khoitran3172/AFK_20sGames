@@ -28,14 +28,15 @@ export class WorldScene extends Phaser.Scene {
   chestBtn!: Phaser.GameObjects.Container;
   pulse: Phaser.GameObjects.Image[] = [];
   clouds: Phaser.GameObjects.Image[] = [];
-  boundChange = () => this.buildInfo();
+  mini?: Phaser.GameObjects.Container;
+  boundChange = () => { this.buildInfo(); this.buildMini(); };
 
   constructor() { super('World'); }
 
   create() {
     const S = getSave();
     Farm.viewing = false;
-    this.selRing = undefined; this.info = undefined as unknown as Phaser.GameObjects.Container; this.layer = undefined as unknown as Phaser.GameObjects.Container; this.clouds = []; this.pulse = []; this.showBubble = false;
+    this.mini = undefined; this.selRing = undefined; this.info = undefined as unknown as Phaser.GameObjects.Container; this.layer = undefined as unknown as Phaser.GameObjects.Container; this.clouds = []; this.pulse = []; this.showBubble = false;
     this.mapIdx = Math.min(MAPS.length - 1, Math.floor(S.farm / ARENAS_PER_MAP));
     this.sel = S.farm;
     this.cameras.main.fadeIn(250);
@@ -265,7 +266,39 @@ export class WorldScene extends Phaser.Scene {
 
     const bg = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.001).setDepth(-50).setInteractive();
     bg.on('pointerdown', () => { if (this.showBubble) { this.showBubble = false; this.buildInfo(); } });
+    this.buildMini();
     this.buildInfo();
+  }
+
+  /** Bản đồ thu nhỏ (góc trên trái): 4 bản đồ lớn, cho biết còn map mới sau khi vượt hết Arena hiện tại */
+  buildMini() {
+    this.mini?.destroy(true);
+    const S = getSave();
+    const W = 236, H = 104;
+    const c = this.add.container(16, 178).setDepth(6000);
+    this.mini = c;
+    c.add(panel(this, 0, 0, W, H, false, 0.4));
+    const icons = ['icon4', 'icon2', 'icon9', 'icon12'];
+    const done = (m: number) => S.unlocked >= (m + 1) * ARENAS_PER_MAP;
+    const open = (m: number) => m * ARENAS_PER_MAP <= S.unlocked;
+    const cur = Math.min(MAPS.length - 1, Math.floor(S.unlocked / ARENAS_PER_MAP));
+    const nm = (m: number) => (open(m) ? MAPS[m].name[getLang()] : '???');
+    c.add(T(this, W / 2, 6, `${t('world_map')} ${this.mapIdx + 1}/${MAPS.length}`, 16, { origin: [0.5, 0], color: '#3b2a14', stroke: '#fff3cc', sw: 0 }));
+    const gap = 52, x0 = W / 2 - gap * 1.5;
+    MAPS.forEach((m, i) => {
+      const x = x0 + i * gap, y = 52;
+      if (i < MAPS.length - 1) c.add(this.add.image(x + gap / 2, y, 'icon8').setDisplaySize(16, 16).setFlipX(true).setAlpha(open(i + 1) ? 1 : 0.5));
+      const b = iconButton(this, x, y, icons[i], () => {
+        if (!open(i)) { toast(this, t('map_locked_hint', { n: i * ARENAS_PER_MAP }), '#ffd9a0'); return; }
+        this.switchMap(i - this.mapIdx);
+      }, !open(i), 44);
+      if (!open(i)) { (b.getAt(1) as Phaser.GameObjects.Image).setTint(0x333344).setAlpha(0.7); b.add(T(this, 0, -1, '?', 22, { origin: [0.5, 0.5], color: '#ffe9a8' })); }
+      c.add(b);
+      if (i === this.mapIdx) c.add(this.add.rectangle(x, y + 29, 36, 4, 0xe8a418).setStrokeStyle(1, 0x3b2a14));
+      if (done(i)) c.add(this.add.circle(x + 16, y - 16, 7, 0x4ec05a).setStrokeStyle(2, 0xffffff));
+    });
+    const nxt = done(MAPS.length - 1) ? t('map_all_done') : t('map_next_goal', { a: (cur + 1) * ARENAS_PER_MAP - S.unlocked, n: nm(cur + 1) });
+    c.add(T(this, W / 2, H - 22, nxt, 13, { origin: [0.5, 0.5], color: '#6b4a20', stroke: '#fff3cc', sw: 0, wrap: W - 16, align: 'center', ls: 0 }));
   }
 
   claim() {
@@ -285,7 +318,7 @@ export class WorldScene extends Phaser.Scene {
     this.sel = Math.min(Math.max(this.sel, n * ARENAS_PER_MAP), n * ARENAS_PER_MAP + ARENAS_PER_MAP - 1);
     if (ARENAS[this.sel].map !== n) this.sel = n * ARENAS_PER_MAP;
     this.cameras.main.flash(200, 20, 30, 40);
-    this.buildMap(); this.updateTitle(); this.buildInfo();
+    this.buildMap(); this.updateTitle(); this.buildInfo(); this.buildMini();
   }
 
   updateTitle() { this.mapTitle.setText(`${this.mapIdx + 1}/4  ${MAPS[this.mapIdx].name[getLang()]}`); }
