@@ -13,6 +13,7 @@ export interface Item {
   icon: number; // chỉ số khung trong atlas 'items' (0-based)
   main: [StatId, number];
   aff: [StatId, number][];
+  plus?: number; // cấp cường hóa 0..MAX_PLUS
 }
 
 export const RARITY_COLOR = [0xb8b8b8, 0x6fcf5a, 0x4aa3ff, 0xc07bff, 0xffa81e];
@@ -20,6 +21,8 @@ export const RARITY_CSS = ['#c8c8c8', '#8fe07a', '#7dbcff', '#d6a6ff', '#ffc24d'
 export const RB = [0.06, 0.1, 0.17, 0.28, 0.45]; // giá trị gốc theo độ hiếm
 export const MAX_RARITY = 4;
 export const BAG_CAP = 60;
+export const MAX_PLUS = 10;
+export const PLUS_STEP = 0.1; // mỗi cấp +10% chỉ số của món đồ
 
 export const MAIN_STAT: Record<Slot, StatId> = { weapon: 'atk', helmet: 'hp', armor: 'def', boots: 'aspd', ring: 'crit', amulet: 'gold' };
 const STAT_MULT: Record<StatId, number> = { atk: 1, hp: 1, def: 1, aspd: 0.45, crit: 0.3, gold: 1, stone: 0.8, troop: 0.8 };
@@ -84,8 +87,9 @@ export const ZERO_BONUS = (): EquipBonus => ({ atk: 0, hp: 0, def: 0, aspd: 0, c
 export function sumBonus(items: Item[]): EquipBonus {
   const b = ZERO_BONUS();
   for (const it of items) {
-    b[it.main[0]] += it.main[1];
-    for (const [s, v] of it.aff) b[s] += v;
+    const k = 1 + PLUS_STEP * (it.plus ?? 0);
+    b[it.main[0]] += it.main[1] * k;
+    for (const [s, v] of it.aff) b[s] += v * k;
   }
   return b;
 }

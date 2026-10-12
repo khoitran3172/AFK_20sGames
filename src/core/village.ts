@@ -7,10 +7,10 @@ export const SITE_TYPES: SiteType[] = ['farm', 'lumber', 'crystal', 'forge'];
 export const MAX_SITE_LV = 20;
 
 export const SITE_DEF: Record<SiteType, { res: keyof Rates; base: number; cost: number; name: string; icon: string }> = {
-  farm: { res: 'gold', base: 0.05, cost: 6, name: 'site_farm', icon: 'icon4' },
-  lumber: { res: 'gold', base: 0.05, cost: 7, name: 'site_lumber', icon: 'icon2' },
-  crystal: { res: 'stones', base: 0.0058, cost: 10, name: 'site_crystal', icon: 'goldRes' },
-  forge: { res: 'badges', base: 0.0018, cost: 14, name: 'site_forge', icon: 'icon6' },
+  farm: { res: 'gold', base: 0.05, cost: 30, name: 'site_farm', icon: 'icon4' },
+  lumber: { res: 'gold', base: 0.05, cost: 35, name: 'site_lumber', icon: 'icon2' },
+  crystal: { res: 'stones', base: 0.0058, cost: 50, name: 'site_crystal', icon: 'goldRes' },
+  forge: { res: 'badges', base: 0.00006, cost: 70, name: 'site_forge', icon: 'icon6' },
 };
 
 export function lvOf(S: Save, arena: number, t: SiteType): number {
@@ -23,7 +23,8 @@ export function siteRate(S: Save, arena: number, t: SiteType): number {
   const L = lvOf(S, arena, t);
   if (!L) return 0;
   const d = SITE_DEF[t];
-  let r = d.base * ARENAS[arena].scale * lvMult(L);
+  // Huy Hiệu là tiền HIẾM: sản lượng Lò Rèn KHÔNG tăng theo hệ số Arena (giá nâng quân là số cố định)
+  let r = d.base * (t === 'forge' ? 1 : ARENAS[arena].scale) * lvMult(L);
   const eb = equipBonus(S);
   if (t === 'farm' || t === 'lumber') r *= (has(S, 32) ? 1.1 : 1) * (1 + eb.gold);
   if (t === 'crystal') r *= (has(S, 33) ? 1.1 : 1) * (1 + eb.stone);
@@ -33,7 +34,7 @@ export function siteRate(S: Save, arena: number, t: SiteType): number {
 }
 
 export function upgradeCost(arena: number, L: number, t: SiteType): number {
-  return Math.ceil(SITE_DEF[t].cost * ARENAS[arena].scale * Math.pow(1.21, L));
+  return Math.ceil(SITE_DEF[t].cost * ARENAS[arena].scale * Math.pow(1.24, L));
 }
 
 export function upgradeSite(S: Save, arena: number, t: SiteType): boolean {

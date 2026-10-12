@@ -263,7 +263,7 @@ export class WorldScene extends Phaser.Scene {
     ch.on('pointerup', () => this.claim());
     this.chestBtn = ch;
 
-    const bg = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.001).setDepth(4000).setInteractive();
+    const bg = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.001).setDepth(-50).setInteractive();
     bg.on('pointerdown', () => { if (this.showBubble) { this.showBubble = false; this.buildInfo(); } });
     this.buildInfo();
   }

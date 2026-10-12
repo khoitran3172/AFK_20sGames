@@ -3,6 +3,7 @@
 import { ARENAS } from '../data/arenas';
 import { Item, rollItem } from '../data/items';
 import { Save, addItem, bump, getSave } from './state';
+import { now as clockNow } from './clock';
 
 export type Counter =
   | 'kills' | 'bossWins' | 'bossTries' | 'items' | 'epics' | 'legends' | 'merges' | 'villageUps' | 'statUps'
@@ -14,8 +15,13 @@ export interface DailyState { day: string; quests: { key: Counter; target: numbe
 export interface LoginState { last: string; streak: number; claimedToday: boolean }
 
 export function today(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const d = new Date(clockNow()); // giờ máy chủ + đồng hồ đơn điệu
+  const cur = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const S = getSave();
+  // chống lùi giờ hệ thống để làm lại nhiệm vụ / quà ngày: không bao giờ trả về ngày nhỏ hơn ngày đã thấy
+  if (S.clockMax && cur < S.clockMax) return S.clockMax;
+  S.clockMax = cur;
+  return cur;
 }
 const dayNum = (s: string) => Math.floor(new Date(s + 'T00:00:00').getTime() / 86400000);
 
@@ -75,7 +81,7 @@ export const dailyProg = (S: Save, i: number) => {
   return Math.min(q.target, cnt(S, q.key) - (d.base[q.key] ?? 0));
 };
 export const dailyDone = (S: Save, i: number) => dailyProg(S, i) >= ensureDaily(S).quests[i].target;
-export function dailyReward(S: Save): Reward { return reward(S, 12, 10, 0); }
+export function dailyReward(S: Save): Reward { return reward(S, 8, 6, 0); }
 export function claimDaily(S: Save, i: number): Reward | null {
   const d = ensureDaily(S);
   if (d.quests[i].claimed || !dailyDone(S, i)) return null;
@@ -88,7 +94,7 @@ export function dailyBonusReady(S: Save) { const d = ensureDaily(S); return !d.b
 export function claimDailyBonus(S: Save): Reward | null {
   if (!dailyBonusReady(S)) return null;
   S.daily.bonusClaimed = true;
-  const r = reward(S, 30, 30, 20);
+  const r = reward(S, 20, 20, 20);
   r.item = rollItem(S.unlocked, 2, 2);
   give(S, r);
   return r;
@@ -123,7 +129,7 @@ export function achValue(S: Save, d: AchDef): number {
 export const achClaimed = (S: Save, d: AchDef) => S.ach?.[d.id] ?? 0; // số bậc đã nhận
 export const achReady = (S: Save, d: AchDef) => { const v = achValue(S, d), c = achClaimed(S, d); return c < 3 && v >= d.tiers[c]; };
 export function achReward(S: Save, tier: number): Reward {
-  const r = reward(S, [25, 120, 480][tier], [20, 100, 400][tier], [0, 20, 80][tier]);
+  const r = reward(S, [15, 70, 300][tier], [12, 60, 250][tier], [0, 20, 80][tier]);
   if (tier === 2) r.item = rollItem(S.unlocked, 3, 2);
   return r;
 }
@@ -151,7 +157,7 @@ export function loginState(S: Save): LoginState {
 }
 export const loginReady = (S: Save) => !loginState(S).claimedToday;
 export function loginReward(S: Save, day: number, preview = false): Reward {
-  const r = reward(S, [8, 12, 18, 25, 35, 50, 90][day], [6, 8, 12, 16, 24, 36, 70][day], [0, 0, 5, 0, 10, 0, 40][day]);
+  const r = reward(S, [5, 8, 12, 16, 24, 34, 60][day], [4, 6, 9, 12, 18, 26, 48][day], [0, 0, 5, 0, 10, 0, 40][day]);
   if (!preview && day === 6) r.item = rollItem(S.unlocked, 3, 2);
   else if (!preview && day === 3) r.item = rollItem(S.unlocked, 1, 1);
   return r;

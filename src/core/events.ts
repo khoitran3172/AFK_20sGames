@@ -58,9 +58,9 @@ export interface Offer { id: number; kind: 'crate' | 'stones' | 'buff'; price: n
 export function merchantOffers(S: Save): Offer[] {
   const G = Math.max(S.rate.gold * 60, 4 * ARENAS[Math.min(S.unlocked, ARENAS.length - 1)].scale);
   return [
-    { id: 0, kind: 'crate', price: Math.ceil(20 * G) },
-    { id: 1, kind: 'stones', price: Math.ceil(10 * G), stones: reward(S, 0, 30).stones },
-    { id: 2, kind: 'buff', price: Math.ceil(8 * G) },
+    { id: 0, kind: 'crate', price: Math.ceil(30 * G) },
+    { id: 1, kind: 'stones', price: Math.ceil(36 * G), stones: reward(S, 0, 30).stones }, // đắt hơn tự sản xuất: không có lời khi quy đổi
+    { id: 2, kind: 'buff', price: Math.ceil(14 * G) }, // buff +50% x 30 phút = lời tối đa ~15 phút thu nhập, giá 14 phút
   ];
 }
 export function buyOffer(S: Save, id: number): { item?: Item; stones?: number; buff?: boolean } | null {
@@ -83,9 +83,9 @@ export function buyOffer(S: Save, id: number): { item?: Item; stones?: number; b
 
 // ------------------------------------------------------------ tấn công
 export function raidRewards(S: Save, arena: number): { gold: number; stones: number; badges: number; item: Item } {
-  const r = reward(S, 25, 25, 25);
+  const r = reward(S, 8, 8, 0);
   void arena;
-  return { gold: r.gold, stones: r.stones, badges: r.badges, item: rollItem(S.unlocked, 1, 2) };
+  return { gold: r.gold, stones: r.stones, badges: 4, item: rollItem(S.unlocked, 1, 2) };
 }
 export function finishRaid(S: Save, won: boolean) {
   if (!S.ev) return;

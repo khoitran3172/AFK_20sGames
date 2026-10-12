@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "sim": "tsx tools/sim.ts"
+    "sim": "tsx tools/sim.ts",
+    "audit": "tsx tools/econ-audit.ts"
   },
   "dependencies": {
     "@fontsource/jersey-10": "^5.3.0",

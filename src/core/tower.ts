@@ -20,13 +20,13 @@ export function towerRewards(S: Save, cleared: number): TowerReward {
   let gold = 0, stones = 0, badges = 0;
   const items: Item[] = [];
   for (let f = 1; f <= cleared; f++) {
-    const r = reward(S, 1.2 + f * 0.15, 0.8 + f * 0.1, f % 5 === 0 ? 2 : 0);
-    gold += r.gold; stones += r.stones; badges += r.badges;
+    const r = reward(S, 0.3 + f * 0.04, 0.2 + f * 0.025, 0);
+    gold += r.gold; stones += r.stones;
     if (f % 10 === 0) { items.push(rollItem(S.unlocked, 2, 2)); badges += 5; }
   }
   const newBest = cleared > prev;
   if (newBest) { // thưởng lần đầu chạm tầng mới
-    const r = reward(S, 0, 3 * (cleared - prev), 0);
+    const r = reward(S, 0, 1.5 * (cleared - prev), 0);
     stones += r.stones;
   }
   return { gold, stones, badges, items, newBest };

@@ -86,9 +86,12 @@ export const BRANCH_INFO: Record<Branch, { name: string; color: number; css: str
 };
 
 /** Chi phí Đá Tinh Thạch để mở node tiếp theo: tăng theo số node đã mở. */
-export function skillCost(unlockedCount: number, hasNode38: boolean): number {
+export const SKILL_C = 4; // chỉnh bằng tools/sim.ts
+export const SKILL_G = 1.12;
+export function skillCost(unlockedCount: number, hasNode38: boolean, frontierScale = 1): number {
   if (unlockedCount === 0) return 0;
-  const base = 12 * Math.pow(1.2, unlockedCount - 1);
+  // giá theo hệ số Arena tiền tuyến: Đá kiếm được tăng theo Arena nên giá node cũng phải tăng theo, nếu không sẽ miễn phí về sau
+  const base = SKILL_C * Math.pow(SKILL_G, unlockedCount - 1) * frontierScale;
   return Math.ceil(base * (hasNode38 ? 0.85 : 1));
 }
 

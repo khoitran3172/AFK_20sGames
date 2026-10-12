@@ -83,7 +83,7 @@ export const TROOP_ORDER: TroopId[] = ['knight', 'pike', 'archer', 'wizard', 'he
 export const TIER_NAMES = ['', 'Tân Binh', 'Dày Dạn', 'Hoàng Gia'];
 export const TIER_STAT_MUL = [0, 1, 1.3, 1.75];
 export const TIER_BADGE_COST = [0, 0, 30, 160];
-export const TIER_GOLD_COST_MUL = [0, 0, 400, 6000]; // x arena scale (xem state)
+export const TIER_GOLD_COST_MUL = [0, 0, 2500, 40000]; // x arena scale (xem state)
 
 export interface Synergy {
   id: string;
@@ -130,7 +130,7 @@ export const TROOP_TREE: Record<TroopId, TreeFx[]> = {
   summoner: [{ atk: 0.3 }, { hp: 0.3 }, { count: 1 }, { spirit: 0.6, atk: 0.3 }],
 };
 export const TREE_BADGE = [20, 50, 110, 220];
-export const TREE_GOLD = [400, 1200, 3500, 9000]; // x hệ số Arena đã mở
+export const TREE_GOLD = [2000, 6000, 18000, 45000]; // x hệ số Arena đã mở
 
 export function treeFx(unlockedNodes: number, id: TroopId): Required<TreeFx> {
   const out: Required<TreeFx> = { hp: 0, atk: 0, def: 0, aspd: 0, crit: 0, count: 0, respawn: 0, heal: 0, spirit: 0 };

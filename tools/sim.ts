@@ -55,7 +55,7 @@ let t = 0;
 const log: string[] = [];
 let fails = 0, lastClear = 0;
 s.squad = ['knight', 'archer', 'healer'];
-while (s.unlocked < TOTAL_ARENAS && t < 3600 * 400) {
+while (s.unlocked < TOTAL_ARENAS && t < 3600 * Number(process.argv[3] ?? 400)) {
   const A = ARENAS[s.unlocked];
   const r = measure(s, s.unlocked);
   const CHUNK = Math.max(MINCHUNK, t * 0.02); const vr = villageRates(s); s.gold += (r.g + vr.gold) * CHUNK; s.stones += (r.st + vr.stones) * CHUNK; s.badges += (r.bd + vr.badges) * CHUNK; t += CHUNK;
@@ -66,7 +66,7 @@ while (s.unlocked < TOTAL_ARENAS && t < 3600 * 400) {
     while (b.state === 'run' && b.time < 240) b.step(0.05);
     if (b.state === 'won') {
       s.gold += b.rewards.gold; s.stones += b.rewards.stones; s.badges += b.rewards.badges;
-      log.push(`A${String(A.index + 1).padStart(2)} ${A.name.padEnd(13)} clear@${(t / 3600).toFixed(2).padStart(7)}h (+${((t - lastClear) / 60).toFixed(0).padStart(4)}m) power ${String(p).padStart(10)} rec ${String(A.recPower).padStart(10)} fails ${fails} skills ${s.skills.length} g/min ${(r.g * 60).toExponential(1)} deaths/40s ${r.deaths} mcHP ${mcStats(s).hp.toExponential(1)}`);
+      const line = (`A${String(A.index + 1).padStart(2)} ${A.name.padEnd(13)} clear@${(t / 3600).toFixed(2).padStart(7)}h (+${((t - lastClear) / 60).toFixed(0).padStart(4)}m) power ${String(p).padStart(10)} rec ${String(A.recPower).padStart(10)} fails ${fails} skills ${s.skills.length} g/min ${(r.g * 60).toExponential(1)} deaths/40s ${r.deaths} mcHP ${mcStats(s).hp.toExponential(1)}`); console.log(line); log.push(line);
       s.unlocked++; lastClear = t; fails = 0;
     } else fails++;
   }

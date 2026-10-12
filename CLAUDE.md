@@ -15,7 +15,8 @@ npx tsc --noEmit                 # type-check
 npm run build                    # tsc + vite build -> dist/
 npx tsx tools/stress.ts          # hồi quy: 84 tổ hợp quân x 46 kỹ năng, phải in "bad 0"
 npx tsx tools/items-test.ts      # logic trang bị
-npm run sim                      # mô phỏng cân bằng tiến trình (CHƯA tính trang bị/sự kiện/tháp/nhiệm vụ)
+npm run sim                      # mô phỏng cân bằng tiến trình: `npx tsx tools/sim.ts 30 400` (CHƯA tính trang bị/sự kiện/tháp/nhiệm vụ)
+npm run audit                    # kiểm tra lỗ hổng kinh tế (farm vô hạn / nhận thưởng lặp) — phải in 'Tất cả kiểm tra kinh tế đều đạt'
 ```
 Trong browser pane: `.claude/launch.json` ở thư mục cha `Desktop\AFK` (server `afk-dev`). Pane throttle rAF => dùng `?debug`. Để xem scene mà không chờ fade: `scene.cameras.main.resetFX()`.
 Tránh heredoc Python dài trong Bash (hay bị cắt) — ghi script ra file bằng Write rồi chạy.
@@ -34,8 +35,11 @@ Rewrite từ card/gacha -> AFK RPG: 1 Thủ Lĩnh + 3 đạo quân, 4 map x 12 A
 ## Asset (ghi công đã có ở Settings + README)
 Tiny Swords (Pixel Frog), Tiny RPG Soldier/Orc (Zerie), Super Pixel Effects Gigapack (unTied), Anvil RPG icons (Ponk, CC BY 4.0), Achievement Icon Pack (GTORAVERSE), LuizMelo (CC0: Evil Wizard 3, Hero Knight, Huntress, Martial Hero 3, Medieval King Pack 2). Gốc tải về ở `Desktop\AFK\assets_download\` (ngoài repo, không commit). Không phát tán lại bộ asset; không dùng cho AI/NFT.
 
+## Kinh tế (đọc docs/ECONOMY.md)
+Arena sau mạnh gấp **5×** (ARENA_STEP). Save key `afk_save_v3` (save cũ bị bỏ). Giờ lấy từ máy chủ (`core/clock.ts`), save có chữ ký. Huy Hiệu là tiền hiếm (không nhân theo Arena); Đá có sink vô hạn (cường hóa trang bị). Sau khi đổi bất kỳ hằng số kinh tế nào: chạy `npm run audit` và `tools/sim.ts`.
+
 ## Việc còn dở / ý tưởng tiếp
-1. **Chưa commit/push** các giai đoạn A, D, F, E, C (trang bị, nhiệm vụ, binh chủng mới, sự kiện, tháp) và đợt đổi giọng miền Nam — chạy `git status`, chờ người dùng đồng ý rồi commit + push.
-2. **Cân bằng lại**: cập nhật `tools/sim.ts` để tính trang bị, thưởng nhiệm vụ/sự kiện/tháp (hiện sim cũ ~35h cho 48 Arena, thực tế sẽ nhanh hơn).
+1. Chạy `git status`: có thể còn thay đổi chưa commit (kinh tế x5, chống cheat, cường hóa). Chỉ commit/push khi người dùng bảo.
+2. Sim mới: ~180h cho 48 Arena (Arena 2 ≈ 2h là bức tường đầu). Cân nhắc làm mượt đoạn đầu; sim chưa tính trang bị/cường hóa/sự kiện/tháp/nhiệm vụ.
 3. Chưa có âm thanh; Wizard (Monk tím)/Rogue (Pawn dao) là sprite tạm; map chưa phong cách tranh vẽ; chưa có server (nhiệm vụ/đăng nhập dựa giờ máy).
 4. Ý tưởng chưa làm: Chuyển sinh (Prestige, đã bỏ), kỹ năng bấm tay cho Thủ Lĩnh, affix/cơ chế riêng cho Arena & Boss, thú cưng, bảng xếp hạng (cần server).

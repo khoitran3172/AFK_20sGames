@@ -37,5 +37,5 @@ const game = new Phaser.Game({
   fps: { forceSetTimeOut: location.search.includes('debug') },
 });
 
-(window as unknown as { __game: Phaser.Game }).__game = game;
+if (location.search.includes('debug')) (window as unknown as { __game: Phaser.Game }).__game = game;
 if (location.search.includes('debug')) (window as unknown as Record<string, unknown>).__dbg = { Farm, getSave, rollItem };

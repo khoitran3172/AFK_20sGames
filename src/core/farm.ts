@@ -4,6 +4,7 @@ import { Battle } from './battle';
 import { Rates, Save, addItem, getSave, has, mods, power, save } from './state';
 import { Item } from '../data/items';
 import { track } from './progress';
+import { now as clockNow, syncClock, trusted as clockTrusted } from './clock';
 import { ensureTower, towerRewards } from './tower';
 import { EventNotice, finishRaid, raidRewards, tickEvents, villageBuff } from './events';
 import { t } from '../i18n';
@@ -34,17 +35,21 @@ class FarmMgr {
 
   get S(): Save { return getSave(); }
 
-  init() {
+  async init() {
     const S = this.S;
+    await syncClock(); // giờ máy chủ: chống đổi giờ hệ thống để lãnh Hòm AFK / quà ngày nhiều lần
     const vr0 = villageRates(S);
     if (S.rate.gold <= 0 && S.rate.stones <= 0) S.rate = { ...vr0 };
-    const away = (Date.now() - S.lastSeen) / 1000;
+    let away = S.lastSeen > 0 ? (clockNow() - S.lastSeen) / 1000 : 0;
+    if (away < 0) away = 0;
+    // không có giờ tin cậy (lúc lưu hoặc lúc mở): chỉ cho tối đa 15 phút offline
+    if (!clockTrusted() || !S.lastSeenOk) away = Math.min(away, 900);
     if (away > 45 && (S.rate.gold > 0 || S.rate.stones > 0)) this.addOffline(away);
     this.startFarm();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) save(true);
       else {
-        const a = (Date.now() - getSave().lastSeen) / 1000;
+        const a = Math.max(0, (clockNow() - getSave().lastSeen) / 1000);
         if (a > 45) this.addOffline(a);
       }
     });
@@ -61,7 +66,7 @@ class FarmMgr {
     const g: Rates = { gold: S.rate.gold * sec * eff, stones: S.rate.stones * sec * eff, badges: S.rate.badges * sec * eff };
     S.chest.gold += g.gold; S.chest.stones += g.stones; S.chest.badges += g.badges;
     S.chestMs += sec * 1000;
-    S.lastSeen = Date.now();
+    S.lastSeen = clockNow();
     this.offline = { seconds: away, gained: g, capped: sec < away };
     save(true);
   }
@@ -71,7 +76,7 @@ class FarmMgr {
     S.gold += c.gold; S.stones += c.stones; S.badges += Math.floor(c.badges);
     S.chest = { gold: 0, stones: 0, badges: 0 };
     S.chestMs = 0;
-    track('chests');
+    if (c.gold > 0 || c.stones > 0) track('chests');
     save(true);
     this.emit();
     return c;

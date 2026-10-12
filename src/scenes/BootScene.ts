@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { DECOR_SHEETS, FX_SHEETS, ICON_SHEETS, IMAGES, SPRITE_SETS } from '../data/sprites';
 import { initTerrain } from '../ui/terrain';
-import { load as loadSave } from '../core/state';
+import { load as loadSave, wasTampered } from '../core/state';
 import { Farm } from '../core/farm';
 import { fontFamily, fs, t } from '../i18n';
 import { W, H } from '../main';
@@ -76,10 +76,11 @@ export class BootScene extends Phaser.Scene {
     buildNines(this);
     initTerrain(this);
 
-    Farm.init();
+    await Farm.init();
 
     const title = this.add.text(W / 2, H / 2 - 120, t('title'), { fontFamily: fontFamily(), fontSize: fs(54), color: '#f3d36b', stroke: '#2b1b0b', strokeThickness: 8 }).setOrigin(0.5);
     this.add.text(W / 2, H / 2 - 60, t('subtitle'), { fontFamily: fontFamily(), fontSize: fs(26), color: '#ffffff', stroke: '#2b1b0b', strokeThickness: 5 }).setOrigin(0.5);
+    if (wasTampered()) this.add.text(W / 2, H / 2 + 150, t('tampered'), { fontFamily: fontFamily(), fontSize: fs(22), color: '#ff9a8a', stroke: '#000', strokeThickness: 4, wordWrap: { width: 900 }, align: 'center' }).setOrigin(0.5);
     const tap = this.add.text(W / 2, H / 2 + 80, t('tap_start'), { fontFamily: fontFamily(), fontSize: fs(30), color: '#ffffff', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
     this.tweens.add({ targets: tap, alpha: 0.2, yoyo: true, repeat: -1, duration: 700 });
     this.tweens.add({ targets: title, y: title.y - 6, yoyo: true, repeat: -1, duration: 1400, ease: 'Sine.inOut' });

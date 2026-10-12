@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { fmt, getSave, power } from '../core/state';
 import { Farm } from '../core/farm';
-import { chip, T, toast } from './kit';
+import { chip, panel, T, toast } from './kit';
 import { ARENAS } from '../data/arenas';
 import { RARITY_CSS, itemName } from '../data/items';
 import { t } from '../i18n';
@@ -22,6 +22,11 @@ export class Hud {
     this.pw.text.setColor('#ffe08a');
     for (const c of [this.gold, this.stones, this.badges, this.pw]) c.c.setDepth(6000);
     this.stones.icon.setDisplaySize(52, 52);
+    const help = (c: { c: Phaser.GameObjects.Container }, kind: string, w: number) => {
+      c.c.setSize(w, 40).setInteractive(new Phaser.Geom.Rectangle(0, 0, w, 40), Phaser.Geom.Rectangle.Contains);
+      c.c.on('pointerup', () => this.showHelp(kind, c.c.x));
+    };
+    help(this.gold, 'gold', 178); help(this.stones, 'stones', 178); help(this.badges, 'badges', 150); help(this.pw, 'power', 220);
     this.rateTxt = T(scene, x + 4, y + 46, '', 17, { color: '#d8f2c8' }).setDepth(6000);
     // chip sự kiện (thương nhân / địch tấn công)
     this.evBox = scene.add.container(x + 770, y).setDepth(6000).setVisible(false);
@@ -31,6 +36,18 @@ export class Hud {
     this.evBox.setSize(330, 40).setInteractive(new Phaser.Geom.Rectangle(0, 0, 330, 40), Phaser.Geom.Rectangle.Contains);
     this.evBox.on('pointerup', () => this.clickEvent());
     this.update(true);
+  }
+  helpBox: Phaser.GameObjects.Container | null = null;
+  showHelp(kind: string, x: number) {
+    this.helpBox?.destroy(true);
+    const w = 420;
+    const c = this.scene.add.container(Math.min(x, 1280 - w - 8), 62).setDepth(7000);
+    this.helpBox = c;
+    c.add(panel(this.scene, 0, 0, w, 185, false, 0.4));
+    c.add(T(this.scene, 16, 10, t('help_' + kind + '_t'), 22, { color: '#3b2a14', stroke: '#fff3cc', sw: 0 }));
+    c.add(T(this.scene, 16, 42, t('help_' + kind), 16, { color: '#4a3a20', stroke: '#fff3cc', sw: 0, wrap: w - 32, ls: 2 }));
+    this.scene.time.delayedCall(6000, () => { if (this.helpBox === c) { c.destroy(true); this.helpBox = null; } });
+    this.scene.input.once('pointerdown', () => { if (this.helpBox === c) this.scene.time.delayedCall(60, () => { c.destroy(true); if (this.helpBox === c) this.helpBox = null; }); });
   }
   clickEvent() {
     const e = getSave().ev;

@@ -83,7 +83,7 @@ export class QuestScene extends Phaser.Scene {
     c.add(panel(this, 180, y, 920, 78, true, 0.4));
     c.add(achvIcon(this, 224, y + 39, d.bonusClaimed ? 'Gold-Chest-3_4-Opened' : 'Silver-Chest', 52));
     c.add(T(this, 262, y + 12, t('all_done_bonus'), 21, { color: '#fff6dd' }));
-    c.add(T(this, 262, y + 44, `+${t('reward_item')} (${t('rarity_2')}+)  ${this.rewardText(reward(S, 30, 30, 20))}`, 15, { color: '#e8d9a8', wrap: 600 }));
+    c.add(T(this, 262, y + 44, `+${t('reward_item')} (${t('rarity_2')}+)  ${this.rewardText(reward(S, 20, 20, 20))}`, 15, { color: '#e8d9a8', wrap: 600 }));
     const bb = button(this, 1020, y + 39, 140, 46, d.bonusClaimed ? t('claimed') : t('claim'), () => {
       const r = claimDailyBonus(getSave());
       if (r) { toast(this, this.rewardText(r) + (r.item ? '  + ' + itemName(r.item) : ''), r.item ? RARITY_CSS[r.item.r] : '#ffe9a8'); save(true); this.build(); }

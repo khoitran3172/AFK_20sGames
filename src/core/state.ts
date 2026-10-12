@@ -1,8 +1,9 @@
 import { ARENAS, TOTAL_ARENAS } from '../data/arenas';
 import { SKILLS, SKILL_BY_ID, skillCost } from '../data/skills';
 import type { DailyState, LoginState } from './progress';
+import { now as clockNow, trusted as clockTrusted } from './clock';
 import type { EventState } from './events';
-import { BAG_CAP, EquipBonus, Item, SLOTS, Slot, getSeq, makeItem, salvageValue, setSeq, sumBonus, ZERO_BONUS } from '../data/items';
+import { MAX_PLUS, BAG_CAP, EquipBonus, Item, SLOTS, Slot, getSeq, makeItem, salvageValue, setSeq, sumBonus, ZERO_BONUS } from '../data/items';
 import { TIER_BADGE_COST, TIER_GOLD_COST_MUL, TIER_STAT_MUL, TREE_BADGE, TREE_GOLD, TROOPS, TROOP_ORDER, TROOP_TREE, TroopId, treeFx } from '../data/troops';
 
 export type StatKey = 'hp' | 'atk' | 'def';
@@ -21,7 +22,8 @@ export interface Save {
   ttree: Record<TroopId, number>; // số node cây nâng quân đã mở
   unlocked: number; // Arena xa nhất được mở (0..47); Boss của nó là thử thách tiếp theo
   farm: number; // Arena đang farm
-  lastSeen: number;
+  lastSeen: number; // giờ máy chủ (ms) lúc lưu gần nhất
+  lastSeenOk: boolean; // lúc lưu có giờ máy chủ tin cậy không
   rate: Rates; // tốc độ farm đo được (đơn vị / giây) — dùng cho offline
   chest: Rates; // hòm AFK đang chờ nhận
   chestMs: number; // thời gian đã tích lũy (ms)
@@ -34,6 +36,7 @@ export interface Save {
   ach: Record<string, number>; // số bậc thành tựu đã nhận
   login: LoginState;
   ev: EventState;
+  clockMax: string; // ngày lớn nhất từng thấy (chống lùi giờ hệ thống)
   tower: { best: number; day: string; used: number };
   kills: number;
   playMs: number;
@@ -41,37 +44,55 @@ export interface Save {
   done: boolean;
 }
 
-const KEY = 'afk_save_v2';
+const KEY = 'afk_save_v3'; // v3: kinh tế x5/Arena — không dùng lại save cũ
 
 export const BASE = { hp: 420, atk: 26, def: 6, aspd: 1.15, range: 85, speed: 125 };
-export const LV_GROWTH = 1.09;
-export const STAT_BASE_COST: Record<StatKey, number> = { hp: 18, atk: 24, def: 20 };
-export const STAT_COST_GROWTH = 1.118;
+export const LV_GROWTH = 1.3;
+export const STAT_BASE_COST: Record<StatKey, number> = { hp: 90, atk: 120, def: 100 };
+export const STAT_COST_GROWTH = 1.32;
 
 export const newEventState = (): EventState => ({ nextAt: 8 * 60_000, merchant: null, raid: null, buffUntil: 0, buffMult: 1 });
 
 export function newSave(): Save {
   return {
-    v: 2, gold: 150, stones: 0, badges: 0,
+    v: 3, gold: 600, stones: 0, badges: 0,
     lv: { hp: 0, atk: 0, def: 0 },
     skills: [1],
     squad: ['knight', 'archer', 'healer'],
     tiers: { knight: 1, pike: 1, archer: 1, wizard: 1, healer: 1, rogue: 1, paladin: 1, huntress: 1, summoner: 1 },
     ttree: { knight: 0, pike: 0, archer: 0, wizard: 0, healer: 0, rogue: 0, paladin: 0, huntress: 0, summoner: 0 },
-    unlocked: 0, farm: 0, lastSeen: Date.now(),
+    unlocked: 0, farm: 0, lastSeen: 0, lastSeenOk: false,
     rate: { gold: 0, stones: 0, badges: 0 },
     chest: { gold: 0, stones: 0, badges: 0 }, chestMs: 0,
-    vil: {}, items: [], equip: {}, itemSeq: 1, cnt: {}, daily: null as unknown as DailyState, ach: {}, login: { last: '', streak: 0, claimedToday: false }, ev: newEventState(), tower: { best: 0, day: '', used: 0 }, kills: 0, playMs: 0, speed: 1, done: false,
+    vil: {}, items: [], equip: {}, itemSeq: 1, cnt: {}, daily: null as unknown as DailyState, ach: {}, login: { last: '', streak: 0, claimedToday: false }, ev: newEventState(), clockMax: '', tower: { best: 0, day: '', used: 0 }, kills: 0, playMs: 0, speed: 1, done: false,
   };
 }
 
 let S: Save = newSave();
 export const getSave = () => S;
 
+// ---- chữ ký lưu trữ: chặn chỉnh sửa dữ liệu thô (chỉ là rào cản, vẫn không thay được máy chủ) ----
+const SALT = 'afk-chronicle-2026-v2';
+function sig(txt: string): string {
+  let h1 = 0x811c9dc5, h2 = 0x1b873593;
+  const s = SALT + txt;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 ^= c; h1 = Math.imul(h1, 16777619); h2 = Math.imul(h2 ^ c, 0x85ebca6b); h2 ^= h2 >>> 13; }
+  return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
+}
+const isDebug = () => typeof location !== 'undefined' && location.search.includes('debug');
+let tampered = false;
+export const wasTampered = () => tampered;
+
 export function load(): Save {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) S = { ...newSave(), ...JSON.parse(raw) };
+    const sg = localStorage.getItem(KEY + '_s');
+    if (raw && sg && sg !== sig(raw) && !isDebug()) {
+      // dữ liệu bị sửa ngoài game: giữ bản sao để điều tra và bắt đầu lại
+      tampered = true;
+      try { localStorage.setItem(KEY + '_bad', raw); } catch { /* ignore */ }
+      S = newSave();
+    } else if (raw) S = { ...newSave(), ...JSON.parse(raw) };
   } catch { S = newSave(); }
   const base = newSave();
   S.tiers = { ...base.tiers, ...(S.tiers || {}) };
@@ -83,15 +104,16 @@ export function load(): Save {
 }
 let saveTimer = 0;
 export function save(force = false) {
-  const now = Date.now();
+  const now = performance.now();
   if (!force && now - saveTimer < 2000) return;
   saveTimer = now;
-  S.lastSeen = now;
+  S.lastSeen = clockNow();
+  S.lastSeenOk = clockTrusted();
   S.itemSeq = getSeq();
-  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* ignore */ }
+  try { const raw = JSON.stringify(S); localStorage.setItem(KEY, raw); localStorage.setItem(KEY + '_s', sig(raw)); } catch { /* ignore */ }
 }
 export function resetSave() {
-  try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + '_s'); localStorage.removeItem(KEY + '_bad'); } catch { /* ignore */ }
   S = newSave();
 }
 
@@ -100,7 +122,7 @@ export const has = (s: Save, id: number) => s.skills.includes(id);
 export function bump(s: Save, key: string, n = 1) { if (!s.cnt) s.cnt = {}; s.cnt[key] = (s.cnt[key] ?? 0) + n; }
 
 export function nextSkillCost(s: Save): number {
-  return skillCost(s.skills.length, has(s, 38));
+  return skillCost(s.skills.length, has(s, 38), ARENAS[Math.min(s.unlocked, TOTAL_ARENAS - 1)].scale);
 }
 export function canUnlock(s: Save, id: number): 'ok' | 'owned' | 'req' | 'cost' {
   if (has(s, id)) return 'owned';
@@ -213,7 +235,9 @@ export function fmt(n: number): string {
   if (!isFinite(n)) return '∞';
   if (n === 0) return '0';
   if (n < 1000) return n >= 100 ? String(Math.floor(n)) : n >= 10 ? n.toFixed(0) : n.toFixed(n < 1 ? 2 : 1).replace(/\.0$/, '');
-  const u = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+  // từ 1e15 trở lên dùng ký hiệu khoa học (hệ số Arena x5 làm số rất lớn, viết tắt chữ cái dễ nhầm)
+  if (n >= 1e15) { const e = Math.floor(Math.log10(n)); return (n / Math.pow(10, e)).toFixed(2) + 'e' + e; }
+  const u = ['K', 'M', 'B', 'T'];
   let i = -1;
   while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
   return (n >= 100 ? n.toFixed(0) : n >= 10 ? n.toFixed(1) : n.toFixed(2)) + u[i];
@@ -235,7 +259,7 @@ export function addItem(s: Save, it: Item): boolean {
 export function equipItem(s: Save, it: Item) { s.equip[it.slot] = it.id; }
 export function unequipSlot(s: Save, sl: Slot) { delete s.equip[sl]; }
 export function salvageItem(s: Save, it: Item): number {
-  if (isEquipped(s, it)) return 0;
+  if (isEquipped(s, it) || (it.plus ?? 0) > 0) return 0; // đồ đã cường hóa không rã được (tránh mất công)
   const v = salvageValue(it, s.unlocked);
   s.items = s.items.filter((x) => x.id !== it.id);
   s.stones += v;
@@ -244,7 +268,7 @@ export function salvageItem(s: Save, it: Item): number {
 /** Ghép 3 món cùng ô + cùng độ hiếm (không tính đồ đang mặc) thành 1 món bậc cao hơn. */
 export function mergeOnce(s: Save, slot: Slot, r: number): Item | null {
   if (r >= 4) return null;
-  const pool = s.items.filter((x) => x.slot === slot && x.r === r && !isEquipped(s, x)).slice(0, 3);
+  const pool = s.items.filter((x) => x.slot === slot && x.r === r && !isEquipped(s, x) && !(x.plus ?? 0)).slice(0, 3);
   if (pool.length < 3) return null;
   const ids = new Set(pool.map((x) => x.id));
   s.items = s.items.filter((x) => !ids.has(x.id));
@@ -255,7 +279,7 @@ export function mergeOnce(s: Save, slot: Slot, r: number): Item | null {
 }
 export function mergeCount(s: Save, r: number): number {
   let n = 0;
-  for (const sl of SLOTS) n += Math.floor(s.items.filter((x) => x.slot === sl && x.r === r && !isEquipped(s, x)).length / 3);
+  for (const sl of SLOTS) n += Math.floor(s.items.filter((x) => x.slot === sl && x.r === r && !isEquipped(s, x) && !(x.plus ?? 0)).length / 3);
   return r >= 4 ? 0 : n;
 }
 export function mergeAll(s: Save, r: number): Item[] {
@@ -280,3 +304,21 @@ export function unlockTreeNode(s: Save, id: TroopId): boolean {
   return true;
 }
 void TROOP_ORDER;
+
+
+// ---------- Cường hóa trang bị: chỗ tiêu Đá + Vàng KHÔNG GIỚI HẠN theo tiến độ (giá tính theo Arena tiền tuyến) ----------
+export function enhanceCost(s: Save, it: Item): { stones: number; gold: number } | null {
+  const p = it.plus ?? 0;
+  if (p >= MAX_PLUS) return null;
+  const m = ARENAS[Math.min(s.unlocked, TOTAL_ARENAS - 1)].scale;
+  const k = Math.pow(1.5, p) * (1 + 0.35 * it.r);
+  return { stones: Math.ceil(30 * m * k), gold: Math.ceil(300 * m * k) };
+}
+export function enhanceItem(s: Save, it: Item): boolean {
+  const c = enhanceCost(s, it);
+  if (!c || s.stones < c.stones || s.gold < c.gold) return false;
+  s.stones -= c.stones; s.gold -= c.gold;
+  it.plus = (it.plus ?? 0) + 1;
+  bump(s, 'enhances');
+  return true;
+}

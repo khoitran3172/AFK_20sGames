@@ -1,4 +1,4 @@
-// 4 bản đồ lớn x 12 Arena = 48 Arena nối tiếp. Chỉ số quái tăng ~x1.35 -> x1.55 mỗi Arena.
+// 4 bản đồ lớn x 12 Arena = 48 Arena nối tiếp. Chỉ số quái Arena sau = ARENA_STEP (x5) lần Arena trước.
 export interface MapDef {
   id: number;
   name: { vi: string; en: string };
@@ -72,8 +72,9 @@ export interface ArenaDef {
 export const TOTAL_ARENAS = 48;
 export const ARENAS_PER_MAP = 12;
 
+export const ARENA_STEP = 5;
 export function arenaGrowth(i: number): number {
-  return i <= 0 ? 1 : 1.35 + 0.2 * ((i - 1) / (TOTAL_ARENAS - 2));
+  return i <= 0 ? 1 : ARENA_STEP;
 }
 
 const BASE_MOB_HP = 70;
@@ -97,7 +98,7 @@ export const ARENAS: ArenaDef[] = (() => {
       killGold: 3 * m,
       killStone: 0.18 * m,
       killBadge: 0.05,
-      bossReward: { gold: 140 * m, stones: 7 * m, badges: 2 + Math.floor(i / 4) },
+      bossReward: { gold: 400 * m, stones: 12 * m, badges: 2 + Math.floor(i / 4) },
       mobHp: BASE_MOB_HP * m,
       mobAtk: BASE_MOB_ATK * m,
       mobDef: BASE_MOB_DEF * Math.sqrt(m),

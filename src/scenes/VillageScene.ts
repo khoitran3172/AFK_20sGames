@@ -82,7 +82,7 @@ export class VillageScene extends Phaser.Scene {
       const tx = T(this, 0, 17, `${t(def.name)}  ${t('level')} ${lv}`, 17, { origin: [0.5, 0.5], color: '#3b2a14', stroke: '#fff3cc', sw: 0 });
       plate.add(tx);
       this.plates.push(tx);
-      plate.setSize(w, 34).setInteractive({ useHandCursor: true });
+      plate.setSize(w, 34).setInteractive(new Phaser.Geom.Rectangle(-w / 2, 0, w, 34), Phaser.Geom.Rectangle.Contains);
       plate.on('pointerup', () => { this.sel = s.type; this.buildCards(); });
       const hit = this.add.rectangle(s.x, s.y + 10, 230, 190, 0xffffff, 0.001).setDepth(5000).setInteractive({ useHandCursor: true });
       hit.on('pointerup', () => { this.sel = s.type; this.buildCards(); });

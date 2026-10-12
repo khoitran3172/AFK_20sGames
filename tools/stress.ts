@@ -8,7 +8,7 @@ const combos: TroopId[][] = [];
 for (let i = 0; i < TROOP_ORDER.length; i++) for (let j = i + 1; j < TROOP_ORDER.length; j++) for (let k = j + 1; k < TROOP_ORDER.length; k++) combos.push([TROOP_ORDER[i], TROOP_ORDER[j], TROOP_ORDER[k]]);
 let bad = 0;
 for (const all of [false, true]) {
-  for (const arena of [0, 30]) {
+  for (const arena of [0, 30, 47]) {
     for (const sq of combos) {
       const s = newSave();
       if (all) s.skills = SKILLS.map((k) => k.id);
