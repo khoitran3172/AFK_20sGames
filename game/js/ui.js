@@ -232,7 +232,8 @@ function act(a) {
     case 'auto': S.auto = !S.auto; break; case 'sell': sellAll(); break;
     case 'car': sendCaravan(+x, P(y)); break; case 'col': collectCaravan(+x); break;
     case 'hlv': levelHero(+x); break;
-    case 'pull': { const res = doPull(x, +y); if (res) showPulls(res, x, +y); break; }
+    case 'pull': { const res = doPull(x, +y); if (res) playSummon(res, x, +y); break; }
+    case 'smclose': closeSummon(); return;
     case 'pickssr': openModal(ssrPickHtml()); return;
     case 'ssr': claimSsrPick(+x); closeModal(); break;
     case 'gift': claimGift(); break;

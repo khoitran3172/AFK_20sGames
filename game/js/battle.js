@@ -103,13 +103,13 @@ function dmgUnit(side, slot, raw, srcSide) {
   let d = raw; if (u.job === 'mine') d = Math.max(1, raw - armorOf(u.m));
   u.hp -= d; emit({ t: 'dmg', side: side === B.p ? 'p' : 'e', slot, n: d }); return d;
 }
-function sweepDead() { for (const s of [B.p, B.e]) s.board.forEach((u, i) => { if (u && u.hp <= 0) { emit({ t: 'die', side: s === B.p ? 'p' : 'e', slot: i }); s.board[i] = null; } }); }
+function sweepDead() { for (const s of [B.p, B.e]) s.board.forEach((u, i) => { if (u && u.hp <= 0) { emit({ t: 'die', side: s === B.p ? 'p' : 'e', slot: i, boss: !!u.boss }); s.board[i] = null; } }); }
 function canPlay(s, i) { const c = s.hand[i]; return !!c && c.cost <= s.mana; }
 function summon(s, i, slot) {
   const c = s.hand[i]; if (!c || c.type !== 'hero' || c.cost > s.mana || s.board[slot]) return false;
   s.mana -= c.cost; s.hand.splice(i, 1);
   const u = { uid: ++uidN, name: c.name, r: c.r, job: c.job, m: c.m, atk: c.atk, hp: c.hp, max: c.hp, boss: c.boss, spr: c.spr, sick: true };
-  s.board[slot] = u; emit({ t: 'summon', side: s === B.p ? 'p' : 'e', slot });
+  s.board[slot] = u; emit({ t: 'summon', side: s === B.p ? 'p' : 'e', slot, boss: !!u.boss, r: u.r });
   if (u.job === 'farm') healBase(s, Math.round(2 * u.m));
   if (u.job === 'trade') { draw(s); if (u.m >= 3) draw(s); }
   return true;
@@ -130,7 +130,7 @@ function cast(s, i, tg) {
   else if (c.slot === 'armor') { const u = tSide.board[tg.slot]; u.hp += c.val; u.max += c.val; emit({ t: 'heal', side: tg.side, slot: tg.slot, n: c.val }); }
   else if (c.slot === 'potion') { const u = tSide.board[tg.slot]; u.atk += Math.max(1, Math.ceil(c.val / 2)); emit({ t: 'buff', side: tg.side, slot: tg.slot }); }
   else { healBase(s, c.val); draw(s); }
-  emit({ t: 'cast', side: s === B.p ? 'p' : 'e', name: c.name }); checkOver(); return true;
+  emit({ t: 'cast', side: s === B.p ? 'p' : 'e', name: c.name, spell: c.slot, tg }); checkOver(); return true;
 }
 function attackLane(s, slot) {            // trả về true nếu có đòn đánh
   const u = s.board[slot]; if (!u || u.sick || B.over) return false;

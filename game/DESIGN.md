@@ -108,3 +108,9 @@ Bảng "📊 Chỉ số giữ chân" trong tab *Khác* chỉ là bản cục b�
 * **Thưởng:** vàng, thưởng lần đầu (ngọc, vé chiêu mộ), 40–80% rơi *mảnh thẻ* của anh hùng trong bộ bài (lên sao). Nhiệm vụ ngày, Hành trình, thành tựu có mục tiêu Đấu Thẻ.
 * **Cân bằng (mô phỏng `tools/sim.js`, thắng ≥50%):** người chơi 4 phiên/ngày qua ~màn 8 (ngày 1), ~14–16 (ngày 3), ~17–19 (ngày 7–14). Màn 20–30 cần lên sao/cấp lâu dài. AI địch & AI của người chơi trong sim là một; người thật chơi tay sẽ tốt hơn AI.
 * **Chưa làm:** PvP thật, hiệu ứng kỹ năng riêng cho từng thẻ, thẻ phép ngoài trang bị, combo theo nghề, âm thanh.
+
+## 9. VFX & UI gacha / đấu thẻ
+
+* **Super Pixel Effects Gigapack (bản Free)** — Will Tice / unTied Games (itch.io). Dùng thương mại được, bắt buộc ghi công (đã có ở footer game), **không** phát tán lại gói zip, **cấm** dùng làm dữ liệu huấn luyện AI. 44 hiệu ứng dùng trong game nằm ở `assets/fx/` (kèm `LICENSE.txt` gốc); engine phát hiệu ứng: `js/fx.js`.
+* **Gacha:** màn triệu hồi (`js/summon.js`): sạc năng lượng (vòng ma thuật + sét + sóng), flash, lật thẻ từng lá; mỗi độ hiếm một bộ VFX (N lấp lánh → R vòng xanh → SR sét tím + rung → SSR ánh sáng + pháo hoa + tiền vàng + chữ S + rung màn hình). Chạm để bỏ qua.
+* **Đấu thẻ:** hiệu ứng triệu hồi, trúng đòn (nặng hơn khi sát thương lớn), hồi máu, tăng công/giáp, sét cho bùa tấn công, khói đầu lâu khi quân chết, nổ cho boss, banner "LƯỢT CỦA BẠN / ĐỐI THỦ", chữ thắng/thua kèm vương miện + pháo hoa. Thẻ có ruy-băng tên, nền theo độ hiếm, ô lane dạng giấy.

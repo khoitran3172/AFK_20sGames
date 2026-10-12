@@ -44,9 +44,9 @@ function renderArena() {
     const fl = A.floats.filter(f => f.side === side && f.slot === k).map(f => `<em class="fl ${f.kind}">${f.kind === 'heal' ? '+' : f.kind === 'buff' ? '⬆' : '-'}${f.n || ''}</em>`).join('');
     const an = A.anim && A.anim.side === side && A.anim.slot === k ? (side === 'p' ? 'lunge-up' : 'lunge-dn') : '';
     const tg = validTarget(side, k) ? 'tg' : '';
-    if (u) return `<div class="lane ${tg}" data-lane="${k}">${unitHtml(u, side, k, an + ' ' + tg)}${fl}</div>`;
+    if (u) return `<div class="lane ${tg}" data-ls="${side}${k}">${unitHtml(u, side, k, an + ' ' + tg)}${fl}</div>`;
     const sum = mine && selC && selC.type === 'hero' && side === 'p' ? 'sum' : '';
-    return `<div class="lane ${sum}"><div class="slot0 ${sum}" data-b="slot:${side}:${k}"></div>${fl}</div>`;
+    return `<div class="lane ${sum}" data-ls="${side}${k}"><div class="slot0 ${sum}" data-b="slot:${side}:${k}"></div>${fl}</div>`;
   }).join('');
   const baseFl = side => A.floats.filter(f => f.side === side && f.slot === -1).map(f => `<em class="fl ${f.kind}">${f.kind === 'heal' ? '+' : '-'}${f.n}</em>`).join('');
   const eBase = `<div class="base ${validTarget('e', -1) ? 'tg' : ''}" data-b="tgt:e:-1">${hpBar(B.e, 'e')}${baseFl('e')}</div>`;
@@ -75,7 +75,36 @@ function flush() {
     else if (e.t === 'atk') { A.anim = { side: e.side, slot: e.slot }; setTimeout(() => { A.anim = null; renderArena(); }, 280 / A.speed); }
   }
   for (const f of keep) { A.floats.push(f); setTimeout(() => { A.floats = A.floats.filter(x => x !== f); renderArena(); }, 900 / A.speed); }
-  renderArena();
+  renderArena(); battleFx(evs);
+}
+const arenaEl = () => document.getElementById('arena');
+function laneEl(side, slot) { return slot < 0 ? document.querySelector(`.aside.${side === 'p' ? 'p' : 'e'} .base`) : document.querySelector(`.lane[data-ls="${side}${slot}"]`); }
+function banner(txt, cls) {
+  const b = document.createElement('div'); b.className = 'turnban ' + cls; b.textContent = txt; arenaEl().appendChild(b); setTimeout(() => b.remove(), 1500 / (A ? A.speed : 1));
+}
+function battleFx(evs) {
+  const sp = A ? A.speed : 1, d = 140 / sp, z = 30;
+  for (const e of evs) {
+    const el = e.slot !== undefined ? laneEl(e.side, e.slot) : null;
+    if (e.t === 'turn') banner(e.side === 'p' ? (A.auto ? 'LƯỢT BẠN · AUTO' : 'LƯỢT CỦA BẠN') : 'LƯỢT ĐỐI THỦ', e.side);
+    else if (e.t === 'summon' && el) {
+      fxEl('ring_b', el, { s: 2.2, z, speed: sp }); fxEl('sparkle_b', el, { s: 2.6, z, speed: sp });
+      if (e.r === 'SSR') fxEl('burst_y', el, { s: 2.4, z, speed: sp, delay: 80 });
+      if (e.boss) { fx('alert', { x: 640, y: 330, s: 3.2, z: 40, speed: sp }); shake(arenaEl(), 500); fxEl('boom3', el, { s: 2.8, z, speed: sp }); }
+    } else if (e.t === 'dmg' && el) {
+      if (e.slot < 0) { fxEl('burst_y', el, { s: 2.6, z, speed: sp, delay: d }); fxEl('hit_y', el, { s: 2.6, z, speed: sp, delay: d }); shake(arenaEl(), 300); }
+      else { fxEl(e.n >= 6 ? 'slash' : 'hit_y', el, { s: 2.4, z, speed: sp, delay: d, rot: e.side === 'p' ? 180 : 0 }); if (e.n >= 6) fxEl('ring_y', el, { s: 2, z, speed: sp, delay: d }); }
+    } else if (e.t === 'heal' && el) fxEl(e.slot < 0 ? 'hearts' : 'heal', el, { s: e.slot < 0 ? 1.2 : 1.1, z, speed: sp });
+    else if (e.t === 'buff' && el) fxEl('atkup', el, { s: 1.1, z, speed: sp });
+    else if (e.t === 'cast' && e.tg) {
+      const t = laneEl(e.tg.side, e.tg.slot);
+      if (e.spell === 'weapon') { fxEl('zap2', t, { s: 3, z, speed: sp }); fxEl('strike', t, { s: 2, z, speed: sp, dy: -40 }); shake(arenaEl(), 250); }
+      else if (e.spell === 'armor') fxEl('defup', t, { s: 1.1, z, speed: sp });
+      else if (e.spell === 'charm') fxEl('absorb', t, { s: 1.2, z, speed: sp });
+    } else if (e.t === 'die' && el) {
+      fxEl(e.boss ? 'boom2' : 'skull', el, { s: e.boss ? 2.6 : 2.6, z, speed: sp, delay: d }); if (e.boss) shake(arenaEl(), 600);
+    }
+  }
 }
 function openArena(n) {
   const b = startFight(n); if (!b) return false;
@@ -90,7 +119,10 @@ async function doAttacks(s) {
 }
 async function finishIfOver() {
   if (!B.over) return false;
-  flush(); await sleep(500);
+  flush(); const won = B.over === 'win', sp = A.speed;
+  if (won) { fx('you_won', { x: 640, y: 250, s: 2.6, z: 40, speed: sp }); fx('crown', { x: 640, y: 150, s: 3, z: 40, speed: sp }); for (let i = 0; i < 4; i++) fx('firework', { x: 300 + i * 220, y: 200 + (i % 2) * 120, s: 3, z: 39, delay: i * 250 / sp, speed: sp }); fx('coins', { x: 640, y: 400, s: 3, z: 39, delay: 400 / sp, speed: sp }); }
+  else { fx('you_lost', { x: 640, y: 250, s: 2.6, z: 40, speed: sp }); fx('failure', { x: 640, y: 120, s: 2.4, z: 40, speed: sp }); }
+  await sleep(2200);
   const st = B.st, res = B.over, r = finishBattle(res, st, false); save();
   const rt = r ? [`${fmt(r.gold)} 🪙`, r.gems && `${r.gems} 💎`, r.tickets && `${r.tickets} 🎫`, r.shard != null && `Mảnh thẻ ${HEROES[r.shard].n}`].filter(Boolean).join(' · ') : '';
   const next = res === 'win' && st.n < STAGE_N && S.battle.energy > 0;
