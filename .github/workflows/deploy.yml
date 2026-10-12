@@ -18,11 +18,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Cache-bust asset URLs with commit SHA
-        run: sed -i "s/__V__/${GITHUB_SHA::8}/g" game/index.html
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: game
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4

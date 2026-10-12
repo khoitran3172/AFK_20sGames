@@ -1,5 +1,21 @@
-# Thương Hội AFK (web game PC)
+# Chronicle of the Chieftain / Biên Niên Thủ Lĩnh
 
-Chạy: `cd game && python -m http.server 8765` rồi mở http://localhost:8765/ (thêm `?dev=1` để có công cụ test thời gian).
-Thiết kế giữ chân & kinh tế: `game/DESIGN.md`. Mô phỏng cân bằng: `node game/tools/sim.js 4 14`.
-Ảnh tham khảo gốc: 2 file .jpg ở thư mục này. Asset tải từ itch.io nằm ở `assets_itch/` (giấy phép trong DESIGN.md).
+Idle / AFK RPG 2D pixel-art (Phaser 3 + TypeScript + Vite). 1 Thủ Lĩnh (Main Character) + 3 đạo quân, 4 bản đồ × 12 Arena,
+cây kỹ năng 46 node. Hai ngôn ngữ: Tiếng Việt (font VT323) và English (font Pixelify Sans).
+
+```bash
+npm install
+npm run dev          # http://localhost:5173  (thêm ?debug để bật chế độ gỡ lỗi)
+npm run build        # build tĩnh vào dist/ (GitHub Pages deploy từ workflow)
+npm run sim          # mô phỏng cân bằng tiến trình (tools/sim.ts)
+npx tsx tools/stress.ts   # kiểm thử hồi quy 46 kỹ năng × 20 bộ quân
+```
+
+Thiết kế chi tiết: [docs/DESIGN.md](docs/DESIGN.md). Bản cũ (idle thương hội + gacha + card battle) nằm ở `legacy/`.
+
+## Asset & giấy phép
+* **Tiny Swords (Free Pack)** — Pixel Frog (itch.io): quân lính, công trình, địa hình, UI.
+* **Tiny RPG Character Asset Pack (Free Soldier & Orc)** — Zerie (itch.io): Thủ Lĩnh và Orc.
+* **Super Pixel Effects Gigapack (bản Free)** — Will Tice / unTied Games: VFX.
+* Fonts: VT323, Pixelify Sans (SIL OFL, qua @fontsource).
+Không phát tán lại bộ asset gốc; không dùng cho huấn luyện AI/NFT.
