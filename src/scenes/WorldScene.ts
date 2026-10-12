@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { ARENAS, ARENAS_PER_MAP, MAPS, TOTAL_ARENAS } from '../data/arenas';
 import { Farm } from '../core/farm';
-import { fmt, getSave, power, save } from '../core/state';
+import { bump, fmt, getSave, power, save } from '../core/state';
+import { runTutorial } from '../ui/tutorial';
 import { Hud } from '../ui/hud';
 import { achvFrame, button, iconButton, iconButtonFrame, modalBack, nine, panel, T, toast } from '../ui/kit';
 import { anyClaimable, loginReady } from '../core/progress';
@@ -46,6 +47,20 @@ export class WorldScene extends Phaser.Scene {
     this.events.once('shutdown', () => { Farm.listeners = Farm.listeners.filter((l) => l !== this.boundChange); });
     if (Farm.offline) this.offlinePopup();
     else if (!Farm.loginShown && loginReady(getSave())) { Farm.loginShown = true; this.time.delayedCall(400, () => this.scene.start('Quests', { tab: 'login' })); }
+    else this.maybeTutorial();
+  }
+
+  /** Hướng dẫn tân thủ: chỉ chạy 1 lần cho người mới (chưa mở Arena nào mới) */
+  maybeTutorial() {
+    const S = getSave();
+    if ((S.cnt?.tutDone ?? 0) > 0 || S.unlocked > 0 || S.kills > 150) return;
+    const a0 = ARENAS[0];
+    this.time.delayedCall(500, () => runTutorial(this, [
+      { x: 1170, y: 606, key: 'tut_1', r: 2 },
+      { x: 326, y: 640, key: 'tut_2', r: 2 },
+      { x: a0.x, y: a0.y, key: 'tut_3' },
+      { x: 100, y: 640, key: 'tut_4', r: 2 },
+    ], () => { bump(getSave(), 'tutDone'); save(true); }));
   }
 
   // ---------------------------------------------------------------- map

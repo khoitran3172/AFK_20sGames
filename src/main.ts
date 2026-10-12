@@ -22,6 +22,7 @@ import { TowerScene } from './scenes/TowerScene';
 import { Farm } from './core/farm';
 import { getSave } from './core/state';
 import { rollItem } from './data/items';
+import { installCursors } from './ui/cursor';
 
 export const W = 1280;
 export const H = 720;
@@ -40,5 +41,6 @@ const game = new Phaser.Game({
   fps: { forceSetTimeOut: location.search.includes('debug') },
 });
 
+installCursors(game.canvas);
 if (location.search.includes('debug')) (window as unknown as { __game: Phaser.Game }).__game = game;
 if (location.search.includes('debug')) (window as unknown as Record<string, unknown>).__dbg = { Farm, getSave, rollItem };
