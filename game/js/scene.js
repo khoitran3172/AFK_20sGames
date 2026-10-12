@@ -7,12 +7,13 @@ const IMG = {};
 const img = s => { if (!IMG[s]) { const i = new Image(); i.src = s; IMG[s] = i; } return IMG[s]; };
 const W = 960, Hh = 540;
 let cv, cx, hot = [], floats = [], pawns = [], sceneT = 0, sparkles = [];
+const SC = 0.78, OX = (960 - 960 * SC) / 2, OY = 44;   // thế giới thu nhỏ để không bị HUD / thanh menu che
 
 const SITES = {
-  farm:   { name: 'Trang Trại', work: [[200, 440], [260, 470], [310, 430], [230, 500], [175, 480]], home: [470, 268], load: 'Run_Meat', tool: 'Idle_Knife', act: 'Interact_Knife', af: 4, hero: [150, 470] },
-  lumber: { name: 'Xưởng Gỗ',  work: [[790, 450], [850, 480], [900, 440], [820, 410], [930, 490]], home: [520, 268], load: 'Run_Wood', tool: 'Idle_Axe', act: 'Interact_Axe', af: 6, hero: [760, 500] },
-  mine:   { name: 'Mỏ Vàng',   work: [[600, 450], [660, 480], [590, 410], [715, 460], [640, 420]], home: [500, 268], load: 'Run_Gold', tool: 'Idle_Pickaxe', act: 'Interact_Pickaxe', af: 6, hero: [560, 495] },
-  garden: { name: 'Tu Viện Dược', work: [[440, 500], [390, 480], [500, 485], [350, 500], [550, 500]], home: [480, 268], load: 'Run', tool: 'Idle_Knife', act: 'Interact_Knife', af: 4, hero: [400, 475] },
+  farm:   { name: 'Trang Trại', work: [[200, 440], [260, 470], [310, 430], [230, 500], [175, 480]], home: [470, 268], load: 'Run_Meat', tool: 'Idle_Knife', act: 'Interact_Knife', af: 4, hero: [150, 455] },
+  lumber: { name: 'Xưởng Gỗ',  work: [[790, 450], [850, 480], [900, 440], [820, 410], [930, 490]], home: [520, 268], load: 'Run_Wood', tool: 'Idle_Axe', act: 'Interact_Axe', af: 6, hero: [760, 470] },
+  mine:   { name: 'Mỏ Vàng',   work: [[600, 450], [660, 480], [590, 410], [715, 460], [640, 420]], home: [500, 268], load: 'Run_Gold', tool: 'Idle_Pickaxe', act: 'Interact_Pickaxe', af: 6, hero: [560, 470] },
+  garden: { name: 'Tu Viện Dược', work: [[440, 500], [390, 480], [500, 485], [350, 500], [550, 500]], home: [480, 268], load: 'Run', tool: 'Idle_Knife', act: 'Interact_Knife', af: 4, hero: [400, 455] },
 };
 const FIX = [ // công trình hạ tầng: tab, nhãn
   { id: 'castle', img: 'Castle', x: 320, y: 0, w: 320, h: 256, tab: 'journey', label: () => `Thương Hội Cấp ${S.guildLv}` },
@@ -26,11 +27,11 @@ const FRAMES = { Idle: 8, Run: 6, Run_Meat: 6, Run_Wood: 6, Run_Gold: 6, Run_Pic
 function sceneInit() {
   cv = document.getElementById('scene'); cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false;
   cv.addEventListener('click', e => {
-    const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width, y = (e.clientY - r.top) * Hh / r.height;
+    const r = cv.getBoundingClientRect(), x = ((e.clientX - r.left) * W / r.width - OX) / SC, y = ((e.clientY - r.top) * Hh / r.height - OY) / SC;
     const h = hot.slice().reverse().find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h); if (h) { if (tab !== h.tab) setTab(h.tab); } else if (tab) setTab(tab);
   });
   cv.addEventListener('mousemove', e => {
-    const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width, y = (e.clientY - r.top) * Hh / r.height;
+    const r = cv.getBoundingClientRect(), x = ((e.clientX - r.left) * W / r.width - OX) / SC, y = ((e.clientY - r.top) * Hh / r.height - OY) / SC;
     cv.style.cursor = hot.some(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) ? 'pointer' : 'default';
   });
   for (let i = 0; i < 20; i++) sparkles.push({ x: Math.random() * W, y: Math.random() * Hh, v: 10 + Math.random() * 20, p: Math.random() * 6 });
@@ -73,9 +74,9 @@ function drawFrame(im, fw, fh, f, x, y, sc, flip) {
   cx.drawImage(im, f * fw, 0, fw, fh, -fw * sc / 2, -fh * sc + 24 * sc, fw * sc, fh * sc); cx.restore();
 }
 function plate(txt, x, y, col = '#f3c14b', sub) {
-  cx.font = 'bold 14px Segoe UI'; const w = cx.measureText(txt).width + 16; const px = x - w / 2;
-  cx.fillStyle = '#000a'; cx.beginPath(); cx.roundRect(px, y - 15, w, 22, 6); cx.fill();
-  cx.fillStyle = col; cx.textAlign = 'center'; cx.fillText(txt, x, y); cx.textAlign = 'start';
+  cx.font = '800 15px Texturina, Philosopher, serif'; const w = cx.measureText(txt).width + 18; const px = x - w / 2;
+  cx.fillStyle = '#000b'; cx.beginPath(); cx.roundRect(px, y - 13, w, 24, 7); cx.fill();
+  cx.fillStyle = col; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(txt, x, y - 1); cx.textAlign = 'start'; cx.textBaseline = 'alphabetic';
 }
 
 function sceneDraw() {
@@ -85,6 +86,7 @@ function sceneDraw() {
   else { cx.fillStyle = '#7aa63a'; cx.fillRect(0, 0, W, Hh); }
   cx.fillStyle = 'rgba(0,0,0,0.06)'; for (let i = 0; i < 40; i++) cx.fillRect((i * 97) % W, (i * 53) % Hh, 30, 6);
 
+  cx.save(); cx.translate(OX, OY); cx.scale(SC, SC);
   const items = [];
   // trang trí: bụi cây & đá
   [[30, 520], [345, 395], [650, 380], [215, 360], [60, 420], [940, 380]].forEach(([x, y], i) => items.push({ y, d: () => drawFrame(img(TS(i % 2 ? 'Bushe2' : 'Bushe1')), 128, 128, frame('Idle', 6) % 8, x, y, 1, false) }));
@@ -104,22 +106,23 @@ function sceneDraw() {
   for (const p of pawns) items.push({ y: p.y, d: () => { const { sheet, f } = pawnSprite(p); drawFrame(sheet, 192, 192, f, p.x, p.y, 0.7, p.face < 0); } });
   // anh hùng được phân công
   for (const slot in S.assign) {
-    const h = HEROES[S.assign[slot]]; const pos = slot === 'trade' ? [215, 520] : SITES[slot] && SITES[slot].hero; if (!pos) continue;
+    const h = HEROES[S.assign[slot]]; const pos = slot === 'trade' ? [215, 470] : SITES[slot] && SITES[slot].hero; if (!pos) continue;
     items.push({ y: pos[1] + 30, d: () => {
       const im = img('assets/rg/rogues.png'); const bob = Math.sin(sceneT * 3 + h.id) * 2;
       cx.fillStyle = RCOL[h.r] + '55'; cx.beginPath(); cx.ellipse(pos[0], pos[1] + 26, 26, 8, 0, 0, 7); cx.fill();
       cx.imageSmoothingEnabled = false; if (im.complete) cx.drawImage(im, h.c * 32, h.rw * 32, 32, 32, pos[0] - 40, pos[1] - 52 + bob, 80, 80);
-      plate(h.n, pos[0], pos[1] + 42, RCOL[h.r]);
+      plate(h.n, pos[0], pos[1] - 58, RCOL[h.r]);
     } });
   }
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
 
   // nhãn
   for (const f of FIX) plate(f.label(), f.x + f.w / 2, f.y + f.h + (f.id === 'castle' ? 14 : 6), f.locked && f.locked() ? '#999' : '#f3c14b');
-  const lab = { farm: [250, 532], lumber: [850, 532], mine: [650, 532], garden: [440, 532] };
+  const lab = { farm: [250, 505], lumber: [850, 505], mine: [650, 505], garden: [440, 508] };
   for (const k of BKEYS) plate(locked(k) ? `${SITES[k].name} (ngày ${BUILD[k].unlockDay + 1})` : S.lv[k] ? `${SITES[k].name} Lv${S.lv[k]}` : `${SITES[k].name} — chưa xây`, lab[k][0], lab[k][1], locked(k) ? '#999' : '#fff');
   // chữ bay
-  for (const f of floats) { cx.globalAlpha = 1 - f.t / 1.6; cx.font = 'bold 16px Segoe UI'; cx.fillStyle = '#ffe27a'; cx.strokeStyle = '#000'; cx.lineWidth = 3; cx.strokeText(f.txt, f.x - 20, f.y - f.t * 30); cx.fillText(f.txt, f.x - 20, f.y - f.t * 30); cx.globalAlpha = 1; }
+  for (const f of floats) { cx.globalAlpha = 1 - f.t / 1.6; cx.font = '800 17px Texturina, serif'; cx.fillStyle = '#ffe27a'; cx.strokeStyle = '#000'; cx.lineWidth = 3; cx.strokeText(f.txt, f.x - 20, f.y - f.t * 30); cx.fillText(f.txt, f.x - 20, f.y - f.t * 30); cx.globalAlpha = 1; }
+  cx.restore();
   // Giờ Vàng
   const gi = goldenInfo();
   if (gi.active) {

@@ -1,10 +1,15 @@
+@font-face{font-family:"Texturina";src:url(../assets/fonts/Texturina.ttf) format("truetype");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Philosopher";src:url(../assets/fonts/Philosopher-Regular.ttf) format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Philosopher";src:url(../assets/fonts/Philosopher-Bold.ttf) format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Grenze Gotisch";src:url(../assets/fonts/GrenzeGotisch.ttf) format("truetype");font-weight:100 900;font-display:swap}
+:root{--fb:"Philosopher","Segoe UI",serif;--fh:"Texturina","Philosopher",serif;--ft:"Grenze Gotisch","Texturina",serif}
 :root{
   --bg:#1a1511;--panel:#2b231b;--panel2:#3a2f23;--edge:#6e5334;--gold:#f3c14b;--txt:#f3e8d2;--mut:#ab9a7a;
   --N:#9aa0a6;--R:#4fa3ff;--SR:#b86bff;--SSR:#ffb83d;--good:#6cd06c;--bad:#e0594f;
 }
 *{box-sizing:border-box}
 img,.px{image-rendering:pixelated}
-button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:6px 11px;color:#fff;background:#3f8f3f;border-bottom:3px solid #286628;font-weight:600;user-select:none}
+button{font:inherit;font-family:var(--fh);letter-spacing:.2px;cursor:pointer;border:0;border-radius:6px;padding:6px 11px;color:#fff;background:#3f8f3f;border-bottom:3px solid #286628;font-weight:600;user-select:none}
 button:hover{filter:brightness(1.12)} button:active{transform:translateY(1px)}
 button:disabled{filter:grayscale(1) brightness(.6);cursor:not-allowed}
 button.red{background:#b4472f;border-color:#7d2c1b}
@@ -13,7 +18,7 @@ button.blue{background:#3a6fb0;border-color:#244a78}
 button.sm{padding:3px 8px;font-size:12px}
 
 html,body{margin:0;height:100%;background:#0b0806;overflow:hidden}
-body{color:var(--txt);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
+body{color:var(--txt);font:15px/1.35 var(--fb)}
 #stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;background:#3c5a1f;user-select:none}
 #scene{position:absolute;inset:0;width:1280px;height:720px;image-rendering:pixelated}
 #credit{position:fixed;right:6px;bottom:2px;color:#6d5a40;font-size:10px;pointer-events:none}
@@ -25,7 +30,7 @@ body{color:var(--txt);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
 .gpl img{width:40px;height:40px;object-fit:contain}
 .gpl b{color:var(--gold)}
 .res{display:flex;gap:5px;flex:1;justify-content:center;flex-wrap:nowrap}
-.chip{display:flex;align-items:center;gap:5px;background:#1d160ee0;border:2px solid var(--edge);border-radius:18px;padding:2px 9px 2px 4px;min-width:96px;font-weight:700;white-space:nowrap}
+.chip{display:flex;align-items:center;gap:5px;background:#1d160ee0;border:2px solid var(--edge);border-radius:18px;padding:2px 9px 2px 4px;min-width:96px;font-family:var(--fh);font-weight:800;font-size:15px;white-space:nowrap}
 .chip.warn{border-color:var(--bad);animation:blink 1s infinite}
 @keyframes blink{50%{background:#4a1a14}}
 .chip small{color:var(--mut);margin-left:auto;padding-left:5px;font-weight:400;font-size:11px}
@@ -39,12 +44,14 @@ button.ib:hover{filter:brightness(1.15)}
 .gbar{background:linear-gradient(90deg,#8c5a0a,#d99a1c,#8c5a0a);color:#2a1b00;font-weight:800;text-align:center;padding:3px 16px;border-radius:14px;font-size:13px;border:2px solid #5a3a06;white-space:nowrap}
 .gbar.idle{background:#1d160ee0;color:var(--mut);font-weight:500;border-color:var(--edge)}
 /* ----- gợi ý ----- */
-#hint{position:absolute;left:14px;bottom:104px;max-width:430px;display:flex;gap:10px;align-items:center;padding:12px 18px 14px 18px;border-image:url(../assets/ts/ui_paper.png) 44 52 45 52 fill/30px 36px 32px 36px stretch;color:#3a2a14;font-weight:600}
+#hint{font-family:var(--fb);position:absolute;left:2px;bottom:2px;width:122px;display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:0;border-style:solid;border-width:30px 36px 32px 36px;border-image:url(../assets/ts/ui_paper.png) 44 52 45 52 fill/30px 36px 32px 36px stretch;color:#3a2a14;font-weight:700;font-size:13px;line-height:1.25;box-sizing:content-box}
+#hint>span{display:none}
+#hint button{align-self:flex-end;padding:3px 9px}
 #hint b{color:#8a4a00}
 #hint button{font-size:12px}
 /* ----- thanh menu ----- */
 #dock{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;gap:6px;padding:8px 16px;border-radius:14px;background:#1d160ef0;border:3px solid var(--edge)}
-.dk{position:relative;width:78px;height:80px;padding:4px 0 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;font-size:11px;font-weight:700;border:0;border-radius:0;background:url(../assets/ts/ui_btn_blue.png) center/100% 100% no-repeat;border-bottom:0;text-shadow:0 1px 2px #000}
+.dk{font-family:var(--fh);position:relative;width:78px;height:80px;padding:4px 0 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;font-size:13px;font-weight:800;border:0;border-radius:0;background:url(../assets/ts/ui_btn_blue.png) center/100% 100% no-repeat;border-bottom:0;text-shadow:0 1px 2px #000}
 .dk.on{background-image:url(../assets/ts/ui_btn_red.png)}
 .dk .dki{height:34px;display:flex;align-items:center}
 .dk.dot::after{content:"";position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:#ff3b30;border:2px solid #fff;animation:pulse 1.2s infinite}
@@ -52,9 +59,9 @@ button.ib:hover{filter:brightness(1.15)}
 .dotted{position:relative}
 .dotted::after{content:"";position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#ff3b30;border:2px solid #1a1511}
 /* ----- cửa sổ ----- */
-#win{position:absolute;left:50%;top:84px;width:900px;height:512px;margin-left:-450px;padding:70px 56px 52px 52px;border-image:url(../assets/ts/ui_wood.png) 85 84 103 84 fill/62px 60px 74px 60px stretch;animation:pop .18s ease-out}
+#win{position:absolute;left:50%;top:98px;width:900px;height:498px;margin-left:-450px;padding:70px 56px 52px 52px;border-image:url(../assets/ts/ui_wood.png) 85 84 103 84 fill/62px 60px 74px 60px stretch;animation:pop .18s ease-out}
 @keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
-#winTitle{position:absolute;left:50%;top:-14px;transform:translateX(-50%);min-width:360px;height:72px;padding:0 90px;line-height:66px;text-align:center;color:#fff;font-weight:900;font-size:20px;letter-spacing:1px;text-shadow:0 2px 0 #1a2a4a;background:url(../assets/ts/ui_ribbon.png) center/100% 100% no-repeat;white-space:nowrap}
+#winTitle{font-family:var(--ft);position:absolute;left:50%;top:-14px;transform:translateX(-50%);min-width:360px;height:72px;padding:0 90px;line-height:66px;text-align:center;color:#fff;font-weight:800;font-size:30px;letter-spacing:1px;text-shadow:0 2px 0 #1a2a4a;background:url(../assets/ts/ui_ribbon.png) center/100% 100% no-repeat;white-space:nowrap}
 #winClose{position:absolute;right:30px;top:6px;z-index:2}
 #winBody{height:100%;overflow-y:auto;columns:2;column-gap:12px;padding-right:4px}
 #winBody>*{break-inside:avoid}
@@ -63,7 +70,7 @@ button.ib:hover{filter:brightness(1.15)}
 .wide{column-span:all}
 
 .card{background:var(--panel);border:2px solid var(--edge);border-radius:10px;padding:10px;margin-bottom:10px}
-.card h3{margin:0 0 8px;color:var(--gold);font-size:15px}
+.card h3{margin:0 0 8px;color:var(--gold);font-size:18px;font-family:var(--fh);font-weight:800;letter-spacing:.3px;text-shadow:0 1px 0 #000}
 .card.lock{opacity:.55}
 .row{display:flex;align-items:center;gap:8px}
 .sp{flex:1;min-width:0}
@@ -99,7 +106,7 @@ select{background:#120e0a;color:var(--txt);border:1px solid var(--edge);border-r
 @keyframes flip{to{opacity:1;transform:none}}
 .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:30;animation:fl .9s}
 @keyframes fl{0%{opacity:.9}100%{opacity:0}}
-#toast{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;z-index:40;align-items:center;pointer-events:none}
+#toast{position:absolute;left:50%;bottom:128px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;z-index:40;align-items:center;pointer-events:none}
 #toast div{background:#000e;border:1px solid var(--gold);padding:6px 14px;border-radius:20px;animation:up 3.2s forwards}
 @keyframes up{0%{opacity:0;transform:translateY(10px)}10%,80%{opacity:1;transform:none}100%{opacity:0}}
 svg.spark{width:100%;height:32px;background:#120e0a;border-radius:4px}
