@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thương Hội AFK</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand"><img src="assets/ts/Icon_06.png" alt=""><span>THƯƠNG HỘI AFK</span></div>
+    <div class="res" id="res"></div>
+    <div class="hbtn"><button id="btnLogin" class="gold" title="Điểm danh">📅</button><button id="btnSet" class="blue" title="Cài đặt">⚙</button></div>
+  </header>
+  <div id="golden"></div>
+  <div class="layout">
+    <section class="left">
+      <canvas id="scene" width="960" height="540"></canvas>
+      <div id="hint"></div>
+    </section>
+    <section class="right">
+      <nav id="nav"></nav>
+      <div id="main"></div>
+    </section>
+  </div>
+  <footer>Asset: Tiny Swords © Pixel Frog · 32rogues © Seth Boyles (xem assets/rg/LICENSE.txt). Không sao chép/phát tán lại bộ asset.</footer>
+</div>
+<div id="modal"><div class="inner" id="modalInner"></div></div>
+<div id="toast"></div>
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/game.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
